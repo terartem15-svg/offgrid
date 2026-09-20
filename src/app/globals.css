@@ -11,6 +11,13 @@
     -webkit-text-size-adjust: 100%;
   }
 
+  /* Smooth anchor-link scrolling (e.g. header "Collections" → #collections) */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
   body {
     @apply bg-white text-ink antialiased;
     text-rendering: optimizeLegibility;
@@ -19,6 +26,25 @@
   /* Consistent, restrained focus ring across the store. */
   :focus-visible {
     @apply outline-none ring-2 ring-ink ring-offset-2;
+  }
+
+  /*
+   * Pointer cursor on every control that can be interacted with. Tailwind's
+   * preflight only covers <button>; checkboxes (and the labels wrapping them),
+   * selects and <summary> would otherwise keep the default arrow. Disabled
+   * controls are excluded so they don't look clickable.
+   */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="range"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  label:has(input[type="checkbox"]:not(:disabled)),
+  label:has(input[type="radio"]:not(:disabled)) {
+    cursor: pointer;
   }
 }
 
