@@ -1,6 +1,6 @@
+import { CollectionsMarquee } from "@/components/home/collections-marquee";
 import { FeaturesBar } from "@/components/home/features-bar";
 import { Hero } from "@/components/home/hero";
-import { PromoBanners } from "@/components/home/promo-banners";
 import { ShopByCategory } from "@/components/home/shop-by-category";
 import { TrendingNow } from "@/components/home/trending-now";
 import { getCategoryTiles, getTrendingProducts } from "@/lib/products";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const [categories, trending] = await Promise.all([
     getCategoryTiles(),
-    getTrendingProducts(6),
+    getTrendingProducts(),
   ]);
 
   return (
@@ -21,7 +21,7 @@ export default async function HomePage() {
       <FeaturesBar />
       <ShopByCategory categories={categories} />
       <TrendingNow products={trending} />
-      <PromoBanners />
+      <CollectionsMarquee />
     </>
   );
 }

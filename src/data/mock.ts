@@ -1,7 +1,11 @@
 /**
  * Static marketing copy with no corresponding database model — feature
- * callouts and homepage promo banners. Product and category data now come
- * from Prisma; see `src/lib/products.ts`.
+ * callouts. Product and category data now come from Prisma; see
+ * `src/lib/products.ts`.
+ *
+ * Only the non-text bits (icon, link, image) live here — the actual title/
+ * subtitle/copy is looked up by `id` from the translation dictionary (see
+ * `@/lib/i18n`) so it follows the site's language switcher.
  */
 
 import type { LucideIcon } from "lucide-react";
@@ -12,53 +16,9 @@ import {
   Truck,
 } from "lucide-react";
 
-/** Build an Unsplash CDN URL from a photo id. */
-const img = (id: string, w = 900) =>
-  `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
-
-export const features: { icon: LucideIcon; title: string; text: string }[] = [
-  {
-    icon: Truck,
-    title: "Free Shipping",
-    text: "On all orders above €150",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Premium Quality",
-    text: "Authenticated & quality checked",
-  },
-  {
-    icon: RefreshCw,
-    title: "Easy Returns",
-    text: "Hassle-free 30-day returns",
-  },
-  {
-    icon: Headphones,
-    title: "24/7 Support",
-    text: "We're here to help anytime",
-  },
-];
-
-export const promoBanners = [
-  {
-    title: "New Drops",
-    subtitle: "Every Week",
-    cta: "Explore",
-    href: "/catalog?sort=newest",
-    image: img("1441984904996-e0b6ba687e04"),
-  },
-  {
-    title: "Premium Selection",
-    subtitle: "Handpicked Pieces",
-    cta: "Explore",
-    href: "/catalog?featured=1",
-    image: img("1489987707025-afc232f7ea0f"),
-  },
-  {
-    title: "Up To 50% Off",
-    subtitle: "Limited Time Only",
-    cta: "Shop Sale",
-    href: "/catalog?sale=1",
-    image: img("1483985988355-763728e1935b"),
-  },
+export const features: { id: "freeShipping" | "premiumQuality" | "easyReturns" | "support"; icon: LucideIcon }[] = [
+  { id: "freeShipping", icon: Truck },
+  { id: "premiumQuality", icon: ShieldCheck },
+  { id: "easyReturns", icon: RefreshCw },
+  { id: "support", icon: Headphones },
 ];
