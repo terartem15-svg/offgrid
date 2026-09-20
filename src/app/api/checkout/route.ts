@@ -120,7 +120,7 @@ export async function POST(request: Request) {
   let order;
   try {
     order = await prisma.$transaction(async (tx) => {
-      const number = await nextOrderNumber();
+      const number = await nextOrderNumber(tx);
 
       const created = await tx.order.create({
         data: {

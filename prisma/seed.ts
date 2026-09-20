@@ -963,6 +963,7 @@ async function resetDatabase() {
   // Order matters: children before parents.
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
+  await prisma.orderCounter.deleteMany(); // numbering restarts together with the orders
   await prisma.cartItem.deleteMany();
   await prisma.cart.deleteMany();
   await prisma.productImage.deleteMany();

@@ -315,3 +315,10 @@ model OrderItem {
 
   @@index([orderId])
 }
+
+// One row per calendar year: `value` is the last order sequence number handed out
+// for that year (see `nextOrderNumber` in src/lib/orders.ts).
+model OrderCounter {
+  year  Int @id
+  value Int @default(0)
+}

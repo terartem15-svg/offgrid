@@ -104,7 +104,7 @@ export async function POST(request: Request) {
   const userId = session?.user?.id;
 
   const order = await prisma.$transaction(async (tx) => {
-    const number = await nextOrderNumber();
+    const number = await nextOrderNumber(tx);
 
     const created = await tx.order.create({
       data: {
