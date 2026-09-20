@@ -6,11 +6,12 @@ const nextConfig: NextConfig = {
   // root to the app directory so Next doesn't infer the wrong workspace root.
   outputFileTracingRoot: path.join(__dirname),
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "images.unsplash.com" },
-      { protocol: "https", hostname: "images.pexels.com" },
-      { protocol: "https", hostname: "plus.unsplash.com" },
-    ],
+    // The admin product form accepts arbitrary external image URLs, so the
+    // allowlist can't be a fixed set of hostnames — trust any HTTPS source.
+    // (Only admins can add these URLs, and they're rendered on public pages,
+    // so Next's image optimizer will proxy-fetch whatever they enter; revisit
+    // with a narrower allowlist if untrusted users ever gain this input.)
+    remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
   eslint: {
     // Keep `next build` green while the app is still being scaffolded.
