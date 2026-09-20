@@ -1,5 +1,8 @@
+"use client";
+
 import { Star } from "lucide-react";
 
+import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type StarRatingProps = {
@@ -9,6 +12,8 @@ type StarRatingProps = {
 };
 
 export function StarRating({ rating, reviewCount, className }: StarRatingProps) {
+  const t = useTranslations().starRating;
+
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <div className="flex items-center gap-0.5" aria-hidden>
@@ -26,7 +31,7 @@ export function StarRating({ rating, reviewCount, className }: StarRatingProps) 
       </div>
       <span className="text-sm text-ink/60">
         {rating.toFixed(1)}
-        {typeof reviewCount === "number" && ` (${reviewCount} reviews)`}
+        {typeof reviewCount === "number" && ` ${t.reviews(reviewCount)}`}
       </span>
     </div>
   );

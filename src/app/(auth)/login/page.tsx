@@ -7,8 +7,10 @@ import { signIn } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { useTranslations } from "@/lib/i18n";
 
 function LoginForm() {
+  const t = useTranslations().auth.login;
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/account";
@@ -41,15 +43,13 @@ function LoginForm() {
   return (
     <div className="mx-auto max-w-sm px-4 py-16">
       <h1 className="text-2xl font-semibold uppercase tracking-[0.14em] text-ink">
-        Sign In
+        {t.title}
       </h1>
-      <p className="mt-2 text-sm text-ink/50">
-        Test accounts: admin@offgrid.dev / customer@offgrid.dev — password123
-      </p>
+      <p className="mt-2 text-sm text-ink/50">{t.testAccounts}</p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
         <div>
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t.email}</Label>
           <Input
             id="email"
             type="email"
@@ -60,7 +60,7 @@ function LoginForm() {
           />
         </div>
         <div>
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t.password}</Label>
           <Input
             id="password"
             type="password"
@@ -74,14 +74,14 @@ function LoginForm() {
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <Button type="submit" size="lg" className="w-full" disabled={loading}>
-          {loading ? "Signing in…" : "Sign In"}
+          {loading ? t.signingIn : t.signIn}
         </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-ink/60">
-        Don&apos;t have an account?{" "}
+        {t.noAccount}{" "}
         <Link href="/register" className="font-medium text-ink underline underline-offset-4">
-          Create one
+          {t.createOne}
         </Link>
       </p>
     </div>

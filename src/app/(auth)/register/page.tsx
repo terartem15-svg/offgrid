@@ -7,8 +7,10 @@ import { signIn } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { useTranslations } from "@/lib/i18n";
 
 export default function RegisterPage() {
+  const t = useTranslations().auth.register;
   const router = useRouter();
 
   const [name, setName] = useState("");
@@ -49,12 +51,12 @@ export default function RegisterPage() {
   return (
     <div className="mx-auto max-w-sm px-4 py-16">
       <h1 className="text-2xl font-semibold uppercase tracking-[0.14em] text-ink">
-        Create Account
+        {t.title}
       </h1>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
         <div>
-          <Label htmlFor="name">Full Name</Label>
+          <Label htmlFor="name">{t.fullName}</Label>
           <Input
             id="name"
             required
@@ -63,7 +65,7 @@ export default function RegisterPage() {
           />
         </div>
         <div>
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t.email}</Label>
           <Input
             id="email"
             type="email"
@@ -74,7 +76,7 @@ export default function RegisterPage() {
           />
         </div>
         <div>
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t.password}</Label>
           <Input
             id="password"
             type="password"
@@ -84,20 +86,20 @@ export default function RegisterPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <p className="mt-1 text-xs text-ink/45">At least 8 characters.</p>
+          <p className="mt-1 text-xs text-ink/45">{t.minChars}</p>
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <Button type="submit" size="lg" className="w-full" disabled={loading}>
-          {loading ? "Creating account…" : "Create Account"}
+          {loading ? t.creating : t.createAccount}
         </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-ink/60">
-        Already have an account?{" "}
+        {t.haveAccount}{" "}
         <Link href="/login" className="font-medium text-ink underline underline-offset-4">
-          Sign in
+          {t.signIn}
         </Link>
       </p>
     </div>

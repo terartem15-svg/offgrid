@@ -1,40 +1,43 @@
+"use client";
+
 import Link from "next/link";
 import { Instagram, Twitter, Youtube } from "lucide-react";
 
 import { NewsletterForm } from "@/components/layout/newsletter-form";
+import { useTranslations } from "@/lib/i18n";
 
 const FOOTER_COLUMNS = [
   {
-    title: "Shop",
+    key: "shop",
     links: [
-      { label: "All Products", href: "/catalog" },
-      { label: "Hoodies", href: "/catalog?category=hoodies" },
-      { label: "T-Shirts", href: "/catalog?category=t-shirts" },
-      { label: "Pants", href: "/catalog?category=pants" },
-      { label: "Jackets", href: "/catalog?category=jackets" },
-      { label: "Accessories", href: "/catalog?category=accessories" },
+      { key: "allProducts", href: "/catalog" },
+      { key: "hoodies", href: "/catalog?category=hoodies" },
+      { key: "tshirts", href: "/catalog?category=t-shirts" },
+      { key: "pants", href: "/catalog?category=pants" },
+      { key: "jackets", href: "/catalog?category=jackets" },
+      { key: "accessories", href: "/catalog?category=accessories" },
     ],
   },
   {
-    title: "Company",
+    key: "company",
     links: [
-      { label: "About Us", href: "/" },
-      { label: "Contact Us", href: "/" },
-      { label: "Shipping & Delivery", href: "/" },
-      { label: "Returns & Refunds", href: "/" },
-      { label: "Privacy Policy", href: "/" },
+      { key: "aboutUs", href: "/about" },
+      { key: "contactUs", href: "/contact" },
+      { key: "shipping", href: "/" },
+      { key: "returns", href: "/" },
+      { key: "privacy", href: "/" },
     ],
   },
   {
-    title: "Help",
+    key: "help",
     links: [
-      { label: "FAQs", href: "/" },
-      { label: "Track Your Order", href: "/" },
-      { label: "Size Guide", href: "/" },
-      { label: "Terms & Conditions", href: "/" },
+      { key: "faqs", href: "/" },
+      { key: "trackOrder", href: "/" },
+      { key: "sizeGuide", href: "/" },
+      { key: "terms", href: "/" },
     ],
   },
-];
+] as const;
 
 const SOCIALS = [
   { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
@@ -42,17 +45,23 @@ const SOCIALS = [
   { icon: Youtube, href: "https://youtube.com", label: "YouTube" },
 ];
 
+// FOOTER_COLUMNS mixes three column shapes with different link keys, so a
+// generic `.map()` over it widens `link.key` to the union of every column's
+// keys — this narrows the lookup back down without an `any` cast.
+function pickLink(links: Record<string, string>, key: string): string {
+  return links[key];
+}
+
 export function SiteFooter() {
+  const t = useTranslations().footer;
+
   return (
     <footer className="bg-ink text-white">
       <div className="mx-auto max-w-7xl px-4 py-16">
         <div className="grid gap-12 lg:grid-cols-[1.2fr_repeat(3,1fr)_1.4fr]">
           <div>
             <p className="text-lg font-bold uppercase tracking-[0.24em]">OFFGRID</p>
-            <p className="mt-4 max-w-xs text-sm text-white/50">
-              Multi-brand fashion for people who dress off the grid. Curated
-              labels, authenticated pieces, shipped worldwide.
-            </p>
+            <p className="mt-4 max-w-xs text-sm text-white/50">{t.tagline}</p>
             <div className="mt-6 flex gap-2">
               {SOCIALS.map(({ icon: Icon, href, label }) => (
                 <a
@@ -70,18 +79,18 @@ export function SiteFooter() {
           </div>
 
           {FOOTER_COLUMNS.map((column) => (
-            <div key={column.title}>
+            <div key={column.key}>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/80">
-                {column.title}
+                {t.columns[column.key].title}
               </p>
               <ul className="mt-4 space-y-2.5">
                 {column.links.map((link) => (
-                  <li key={link.label}>
+                  <li key={link.key}>
                     <Link
                       href={link.href}
                       className="text-sm text-white/50 transition-colors hover:text-white"
                     >
-                      {link.label}
+                      {pickLink(t.columns[column.key].links, link.key)}
                     </Link>
                   </li>
                 ))}
@@ -91,11 +100,9 @@ export function SiteFooter() {
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/80">
-              Newsletter
+              {t.newsletter.title}
             </p>
-            <p className="mt-4 text-sm text-white/50">
-              Get exclusive updates on new drops and special offers.
-            </p>
+            <p className="mt-4 text-sm text-white/50">{t.newsletter.blurb}</p>
             <div className="mt-4">
               <NewsletterForm />
             </div>
@@ -103,7 +110,7 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-14 border-t border-white/10 pt-6 text-center text-xs text-white/40">
-          © {new Date().getFullYear()} OFFGRID. All rights reserved.
+          © {new Date().getFullYear()} OFFGRID. {t.rights}
         </div>
       </div>
     </footer>

@@ -7,6 +7,7 @@ import { Minus, Plus, ShoppingBag, Truck, X } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
+import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
   FREE_SHIPPING_THRESHOLD,
@@ -15,6 +16,7 @@ import {
 } from "@/store/cart";
 
 export function CartDrawer() {
+  const t = useTranslations().cart;
   const isOpen = useCartStore((s) => s.isOpen);
   const close = useCartStore((s) => s.close);
   const items = useCartStore((s) => s.items);
@@ -62,7 +64,7 @@ export function CartDrawer() {
       <aside
         role="dialog"
         aria-modal="true"
-        aria-label="Shopping cart"
+        aria-label={t.title}
         className={cn(
           "absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-white shadow-xl transition-transform duration-300",
           isOpen ? "translate-x-0" : "translate-x-full",
@@ -70,12 +72,12 @@ export function CartDrawer() {
       >
         <div className="flex items-center justify-between border-b border-ink/10 px-5 py-4">
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-ink">
-            Your Cart {items.length > 0 && `(${items.length})`}
+            {t.title} {items.length > 0 && `(${items.length})`}
           </p>
           <button
             type="button"
             onClick={close}
-            aria-label="Close cart"
+            aria-label={t.close}
             className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-ink/5"
           >
             <X className="h-5 w-5" />
@@ -85,12 +87,13 @@ export function CartDrawer() {
         <div className="border-b border-ink/10 bg-paper px-5 py-4">
           {remaining > 0 ? (
             <p className="text-xs text-ink/70">
-              Add <span className="font-semibold text-ink">{formatPrice(remaining)}</span>{" "}
-              more for free shipping
+              {t.addMorePrefix}{" "}
+              <span className="font-semibold text-ink">{formatPrice(remaining)}</span>{" "}
+              {t.addMoreSuffix}
             </p>
           ) : (
             <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
-              <Truck className="h-4 w-4" /> You&apos;ve unlocked free shipping!
+              <Truck className="h-4 w-4" /> {t.freeShippingUnlocked}
             </p>
           )}
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-ink/10">
@@ -107,13 +110,13 @@ export function CartDrawer() {
         {items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 text-center">
             <ShoppingBag className="h-10 w-10 text-ink/20" />
-            <p className="text-sm text-ink/50">Your cart is empty.</p>
+            <p className="text-sm text-ink/50">{t.empty}</p>
             <Link
               href="/catalog"
               onClick={close}
               className={cn(buttonVariants({ size: "sm" }))}
             >
-              Continue Shopping
+              {t.continueShopping}
             </Link>
           </div>
         ) : (
@@ -199,20 +202,18 @@ export function CartDrawer() {
 
             <div className="border-t border-ink/10 px-5 py-5">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-ink/60">Subtotal</span>
+                <span className="text-ink/60">{t.subtotal}</span>
                 <span className="text-base font-semibold text-ink">
                   {formatPrice(subtotal)}
                 </span>
               </div>
-              <p className="mt-1 text-xs text-ink/45">
-                Shipping and taxes calculated at checkout.
-              </p>
+              <p className="mt-1 text-xs text-ink/45">{t.shippingNote}</p>
               <Link
                 href="/checkout"
                 onClick={close}
                 className={cn(buttonVariants({ size: "lg" }), "mt-4 w-full")}
               >
-                Checkout
+                {t.checkout}
               </Link>
               <Button
                 variant="ghost"
@@ -220,7 +221,7 @@ export function CartDrawer() {
                 className="mt-2 w-full"
                 onClick={close}
               >
-                Continue Shopping
+                {t.continueShopping}
               </Button>
             </div>
           </>
