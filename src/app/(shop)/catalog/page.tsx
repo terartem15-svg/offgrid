@@ -6,6 +6,7 @@ import { FilterSidebar } from "@/components/catalog/filter-sidebar";
 import { Pagination } from "@/components/catalog/pagination";
 import { ProductCard } from "@/components/shared/product-card";
 import { getCatalogProducts, getFilterOptions } from "@/lib/products";
+import { cleanList, parsePage, parsePrice } from "@/lib/query-params";
 
 export const metadata: Metadata = {
   title: "Catalog",
@@ -26,9 +27,6 @@ type CatalogPageProps = {
     page?: string;
   }>;
 };
-
-const asArray = (value?: string | string[]) =>
-  value === undefined ? [] : Array.isArray(value) ? value : [value];
 
 const GENDER_BY_PARAM: Record<string, Gender> = {
   men: Gender.MEN,
@@ -51,21 +49,22 @@ function buildPageHref(params: Awaited<CatalogPageProps["searchParams"]>, page: 
 export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const params = await searchParams;
 
-  const genderParams = asArray(params.gender).map((g) => g.toLowerCase());
+  // Query parameters are untrusted: clean/parse them before they reach the database query.
+  const genderParams = cleanList(params.gender).map((g) => g.toLowerCase());
   const filters = {
     gender: genderParams
       .map((g) => GENDER_BY_PARAM[g])
       .filter((g): g is Gender => g !== undefined),
-    category: asArray(params.category),
-    brand: asArray(params.brand),
-    size: asArray(params.size),
-    color: asArray(params.color),
-    priceMin: params.priceMin ? Number(params.priceMin) : undefined,
-    priceMax: params.priceMax ? Number(params.priceMax) : undefined,
+    category: cleanList(params.category),
+    brand: cleanList(params.brand),
+    size: cleanList(params.size),
+    color: cleanList(params.color),
+    priceMin: parsePrice(params.priceMin),
+    priceMax: parsePrice(params.priceMax),
     featured: params.featured === "true" || params.featured === "1",
     sort: params.sort === "newest" ? ("newest" as const) : undefined,
     sale: params.sale === "true" || params.sale === "1",
-    page: params.page ? Number(params.page) : undefined,
+    page: parsePage(params.page),
   };
 
   const [{ items, categoryName, total, pageCount, page: currentPage }, options] = await Promise.all([
