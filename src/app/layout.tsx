@@ -8,6 +8,8 @@ import { CartSessionSync } from "@/components/cart/cart-session-sync";
 import { NotificationBar } from "@/components/layout/notification-bar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { WishlistDrawer } from "@/components/wishlist/wishlist-drawer";
+import { WishlistSessionSync } from "@/components/wishlist/wishlist-session-sync";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -33,6 +35,8 @@ export default function RootLayout({
           <SiteFooter />
           <CartDrawer />
           <CartSessionSync />
+          <WishlistDrawer />
+          <WishlistSessionSync />
         </SessionProvider>
       </body>
     </html>
