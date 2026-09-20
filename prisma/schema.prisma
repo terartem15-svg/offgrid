@@ -322,3 +322,12 @@ model OrderCounter {
   year  Int @id
   value Int @default(0)
 }
+
+// Fixed-window counters for abuse protection (sign-in attempts, sign-ups). `key` names what is
+// being limited, e.g. "login:email:<address>" or "register:ip:<ip>". Rows are written with raw
+// SQL in src/lib/rate-limit.ts so the increment is a single atomic statement.
+model RateLimit {
+  key         String   @id
+  count       Int
+  windowStart DateTime
+}

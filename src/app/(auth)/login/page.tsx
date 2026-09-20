@@ -33,7 +33,8 @@ function LoginForm() {
 
     setLoading(false);
     if (result?.error) {
-      setError("Неверный email или пароль");
+      // `code` is set by the server when the sign-in was blocked by the attempt limit.
+      setError(result.code === "too_many_attempts" ? t.tooManyAttempts : t.invalidCredentials);
       return;
     }
     // `callbackUrl` comes from the query string, so it must never take the user off this site.

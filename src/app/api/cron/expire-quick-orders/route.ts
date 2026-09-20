@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { cancelUnpaidOrder } from "@/lib/order-state";
 import { prisma } from "@/lib/prisma";
+import { deleteExpiredRateLimits } from "@/lib/rate-limit";
 
 // Quick-order (`/api/quick-order`) reserves stock up front and expects a
 // manager to call the customer back and confirm. If nobody does, the order
@@ -34,5 +35,9 @@ export async function GET(request: Request) {
     if (await cancelUnpaidOrder(order.id)) cancelled++;
   }
 
-  return NextResponse.json({ checked: stale.length, cancelled });
+  // The sign-in/sign-up attempt counters (lib/rate-limit) are only useful for minutes; piggyback
+  // on this daily run instead of adding another cron entry.
+  const rateLimitRowsRemoved = await deleteExpiredRateLimits();
+
+  return NextResponse.json({ checked: stale.length, cancelled, rateLimitRowsRemoved });
 }

@@ -425,6 +425,8 @@ const translations = {
       login: {
         title: "Sign In",
         testAccount: "Test account: customer@offgrid.dev — password123",
+        invalidCredentials: "Invalid email or password.",
+        tooManyAttempts: "Too many sign-in attempts. Please try again in a few minutes.",
         email: "Email",
         password: "Password",
         signingIn: "Signing in…",
@@ -865,6 +867,8 @@ const translations = {
       login: {
         title: "Autentificare",
         testAccount: "Cont de test: customer@offgrid.dev — password123",
+        invalidCredentials: "Email sau parolă incorecte.",
+        tooManyAttempts: "Prea multe încercări de autentificare. Încearcă din nou peste câteva minute.",
         email: "Email",
         password: "Parolă",
         signingIn: "Se autentifică…",
@@ -1316,6 +1320,8 @@ const translations = {
       login: {
         title: "Вход",
         testAccount: "Тестовый аккаунт: customer@offgrid.dev — password123",
+        invalidCredentials: "Неверный email или пароль.",
+        tooManyAttempts: "Слишком много попыток входа. Попробуйте снова через несколько минут.",
         email: "Email",
         password: "Пароль",
         signingIn: "Выполняется вход…",

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/auth";
+import { clientIp } from "@/lib/client-ip";
 import { OutOfStockError, reserveStock } from "@/lib/order-state";
 import { nextOrderNumber } from "@/lib/orders";
 import { prisma } from "@/lib/prisma";
@@ -14,14 +15,6 @@ const FLAT_SHIPPING_CENTS = 999; // €9.99
 // for free. Cap how many orders one IP can place in a rolling window.
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
-
-function clientIp(request: Request): string | null {
-  // Vercel (and most proxies) prepend the real client to X-Forwarded-For;
-  // everything after it is proxies the request passed through.
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return request.headers.get("x-real-ip");
-}
 
 const quickOrderSchema = z
   .object({
