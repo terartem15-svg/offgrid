@@ -46,7 +46,7 @@ function LoginForm() {
       <h1 className="text-2xl font-semibold uppercase tracking-[0.14em] text-ink">
         {t.title}
       </h1>
-      <p className="mt-2 text-sm text-ink/50">{t.testAccounts}</p>
+      <p className="mt-2 text-sm text-ink/50">{t.testAccount}</p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
         <div>

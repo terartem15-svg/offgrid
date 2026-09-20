@@ -424,7 +424,7 @@ const translations = {
     auth: {
       login: {
         title: "Sign In",
-        testAccounts: "Test accounts: admin@offgrid.dev / customer@offgrid.dev — password123",
+        testAccount: "Test account: customer@offgrid.dev — password123",
         email: "Email",
         password: "Password",
         signingIn: "Signing in…",
@@ -864,7 +864,7 @@ const translations = {
     auth: {
       login: {
         title: "Autentificare",
-        testAccounts: "Conturi de test: admin@offgrid.dev / customer@offgrid.dev — password123",
+        testAccount: "Cont de test: customer@offgrid.dev — password123",
         email: "Email",
         password: "Parolă",
         signingIn: "Se autentifică…",
@@ -1315,7 +1315,7 @@ const translations = {
     auth: {
       login: {
         title: "Вход",
-        testAccounts: "Тестовые аккаунты: admin@offgrid.dev / customer@offgrid.dev — password123",
+        testAccount: "Тестовый аккаунт: customer@offgrid.dev — password123",
         email: "Email",
         password: "Пароль",
         signingIn: "Выполняется вход…",
