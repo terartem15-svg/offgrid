@@ -8,12 +8,12 @@ import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { useTranslations } from "@/lib/i18n";
+import { safeCallbackUrl } from "@/lib/safe-redirect";
 
 function LoginForm() {
   const t = useTranslations().auth.login;
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/account";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +36,8 @@ function LoginForm() {
       setError("Неверный email или пароль");
       return;
     }
-    router.push(callbackUrl);
+    // `callbackUrl` comes from the query string, so it must never take the user off this site.
+    router.push(safeCallbackUrl(searchParams.get("callbackUrl"), window.location.origin));
     router.refresh();
   };
 
