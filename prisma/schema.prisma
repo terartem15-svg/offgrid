@@ -111,6 +111,12 @@ enum ProductStatus {
   ARCHIVED
 }
 
+enum Gender {
+  MEN
+  WOMEN
+  UNISEX
+}
+
 model Brand {
   id          String  @id @default(cuid())
   name        String  @unique
@@ -146,10 +152,12 @@ model Product {
   name        String
   slug        String        @unique
   description String
-  basePrice   Int // price in minor units (e.g. cents)
-  currency    String        @default("EUR")
-  status      ProductStatus @default(DRAFT)
-  isFeatured  Boolean       @default(false)
+  basePrice      Int // price in minor units (e.g. cents)
+  compareAtPrice Int? // pre-discount price in minor units; set => product is on sale
+  currency       String        @default("EUR")
+  status         ProductStatus @default(DRAFT)
+  isFeatured     Boolean       @default(false)
+  gender         Gender        @default(MEN)
 
   brandId    String
   categoryId String
@@ -165,6 +173,7 @@ model Product {
   @@index([brandId])
   @@index([categoryId])
   @@index([status])
+  @@index([gender])
 }
 
 model ProductImage {
@@ -173,6 +182,7 @@ model ProductImage {
   url       String
   alt       String?
   position  Int     @default(0)
+  color     String? // when set, gallery shows this image only for that variant color; null = shown regardless of color
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
