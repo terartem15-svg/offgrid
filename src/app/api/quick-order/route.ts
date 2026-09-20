@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/auth";
+import { OutOfStockError, reserveStock } from "@/lib/order-state";
 import { nextOrderNumber } from "@/lib/orders";
 import { prisma } from "@/lib/prisma";
 
@@ -103,49 +104,60 @@ export async function POST(request: Request) {
   const session = await auth();
   const userId = session?.user?.id;
 
-  const order = await prisma.$transaction(async (tx) => {
-    const number = await nextOrderNumber(tx);
+  let order;
+  try {
+    order = await prisma.$transaction(async (tx) => {
+      const number = await nextOrderNumber(tx);
 
-    const created = await tx.order.create({
-      data: {
-        number,
-        userId,
-        status: "PENDING",
-        fulfillmentMethod,
-        guestName: userId ? null : name,
-        guestPhone: userId ? null : phone,
-        guestEmail: userId ? null : email || null,
-        guestIp: ip,
-        subtotal,
-        shipping,
-        total,
-        currency: "EUR",
-        shippingAddress:
-          fulfillmentMethod === "DELIVERY" ? { fullName: name, line1: address, phone } : undefined,
-        items: {
-          create: [
-            {
-              variantId: variant.id,
-              productName: variant.product.name,
-              brandName: variant.product.brand.name,
-              size: variant.size,
-              color: variant.color,
-              imageUrl: variant.product.images[0]?.url ?? null,
-              unitPrice,
-              quantity: 1,
-            },
-          ],
+      const created = await tx.order.create({
+        data: {
+          number,
+          userId,
+          status: "PENDING",
+          fulfillmentMethod,
+          guestName: userId ? null : name,
+          guestPhone: userId ? null : phone,
+          guestEmail: userId ? null : email || null,
+          guestIp: ip,
+          subtotal,
+          shipping,
+          total,
+          currency: "EUR",
+          shippingAddress:
+            fulfillmentMethod === "DELIVERY" ? { fullName: name, line1: address, phone } : undefined,
+          items: {
+            create: [
+              {
+                variantId: variant.id,
+                productName: variant.product.name,
+                brandName: variant.product.brand.name,
+                size: variant.size,
+                color: variant.color,
+                imageUrl: variant.product.images[0]?.url ?? null,
+                unitPrice,
+                quantity: 1,
+              },
+            ],
+          },
         },
-      },
-    });
+      });
 
-    await tx.productVariant.update({
-      where: { id: variant.id },
-      data: { stock: { decrement: 1 } },
-    });
+      // The availability check above ran outside this transaction, so two buyers can both
+      // pass it for the last unit. Take the unit with a conditional decrement (`stock >= 1`):
+      // the loser gets OutOfStockError and this whole transaction, order included, rolls back.
+      await reserveStock(tx, [{ variantId: variant.id, quantity: 1 }]);
 
-    return created;
-  });
+      return created;
+    });
+  } catch (error) {
+    if (error instanceof OutOfStockError) {
+      return NextResponse.json(
+        { error: "This item is no longer available in that size/color" },
+        { status: 409 },
+      );
+    }
+    throw error;
+  }
 
   return NextResponse.json({ orderNumber: order.number }, { status: 201 });
 }
