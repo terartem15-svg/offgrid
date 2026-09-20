@@ -21,9 +21,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# env files
-.env
-.env*.local
+# env files (secrets stay local; only the .env.example template is committed)
+.env*
+!.env.example
 
 # vercel
 .vercel
@@ -36,3 +36,9 @@ yarn-error.log*
 
 # editor
 .idea
+
+# local test tooling (temp DB, browser automation, screenshots) and temp files
+/.tmp/
+/.e2e/node_modules/
+/.e2e/pgdata/
+/.e2e/shots/
