@@ -254,11 +254,27 @@ enum OrderStatus {
   REFUNDED
 }
 
+enum FulfillmentMethod {
+  DELIVERY
+  PICKUP
+}
+
 model Order {
   id     String      @id @default(cuid())
   number String      @unique // human-readable, e.g. OG-2026-000123
-  userId String
+  userId String?
   status OrderStatus @default(PENDING)
+
+  fulfillmentMethod FulfillmentMethod @default(DELIVERY)
+
+  // Set instead of `user` for guest "buy now" orders placed without an account —
+  // a manager calls back on `guestPhone` to confirm, CIS quick-order style.
+  guestName  String?
+  guestPhone String?
+  guestEmail String?
+  // Requester IP for the quick-order endpoint's rate limiting (unauthenticated
+  // and stock-affecting, so it needs its own abuse guard). Not set for cart checkouts.
+  guestIp    String?
 
   subtotal Int
   shipping Int    @default(0)
@@ -268,9 +284,9 @@ model Order {
   stripeSessionId       String? @unique
   stripePaymentIntentId String?
 
-  shippingAddress Json // snapshot of the Address at purchase time
+  shippingAddress Json? // snapshot of the Address at purchase time; null for pickup orders
 
-  user  User        @relation(fields: [userId], references: [id])
+  user  User?       @relation(fields: [userId], references: [id])
   items OrderItem[]
 
   createdAt DateTime @default(now())
@@ -278,6 +294,7 @@ model Order {
 
   @@index([userId])
   @@index([status])
+  @@index([guestIp])
 }
 
 model OrderItem {
