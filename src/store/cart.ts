@@ -18,8 +18,15 @@ export type CartLine = {
 
 type AddInput = Omit<CartLine, "id" | "quantity"> & { quantity?: number };
 
+/** Key used for `carts` when nobody is signed in. */
+const GUEST_KEY = "guest";
+
 type CartState = {
   items: CartLine[];
+  /** Other identities' saved carts, keyed by userId (or `GUEST_KEY`) — everyone but `activeUserKey`. */
+  carts: Record<string, CartLine[]>;
+  /** Whose cart `items` currently represents. */
+  activeUserKey: string;
   isOpen: boolean;
   addItem: (input: AddInput) => void;
   removeItem: (id: string) => void;
@@ -28,6 +35,8 @@ type CartState = {
   open: () => void;
   close: () => void;
   toggle: () => void;
+  /** Call on sign-in/sign-out so `items` always reflects the signed-in user's own cart. */
+  setUser: (userId: string | null) => void;
 };
 
 const lineId = (slug: string, size?: string, color?: string) =>
@@ -37,6 +46,8 @@ export const useCartStore = create<CartState>()(
   persist(
     (set) => ({
       items: [],
+      carts: {},
+      activeUserKey: GUEST_KEY,
       isOpen: false,
       addItem: (input) =>
         set((state) => {
@@ -74,12 +85,32 @@ export const useCartStore = create<CartState>()(
       open: () => set({ isOpen: true }),
       close: () => set({ isOpen: false }),
       toggle: () => set((state) => ({ isOpen: !state.isOpen })),
+      setUser: (userId) =>
+        set((state) => {
+          const nextKey = userId ?? GUEST_KEY;
+          if (nextKey === state.activeUserKey) return {};
+          // Stash the outgoing identity's items and swap in the incoming
+          // identity's saved cart (empty for a first-time visitor) — this
+          // is what keeps signing out / switching accounts from leaking
+          // one user's cart into another's.
+          const carts = { ...state.carts, [state.activeUserKey]: state.items };
+          return {
+            carts,
+            activeUserKey: nextKey,
+            items: carts[nextKey] ?? [],
+            isOpen: false,
+          };
+        }),
     }),
     {
       name: "offgrid-cart",
       // Drawer visibility is a transient UI concern — never persist or
       // rehydrate it, otherwise a page refresh could reopen the drawer.
-      partialize: (state) => ({ items: state.items }),
+      partialize: (state) => ({
+        items: state.items,
+        carts: state.carts,
+        activeUserKey: state.activeUserKey,
+      }),
     },
   ),
 );

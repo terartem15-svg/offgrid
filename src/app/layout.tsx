@@ -4,6 +4,7 @@ import { SessionProvider } from "next-auth/react";
 
 import "./globals.css";
 import { CartDrawer } from "@/components/cart/cart-drawer";
+import { CartSessionSync } from "@/components/cart/cart-session-sync";
 import { NotificationBar } from "@/components/layout/notification-bar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -31,6 +32,7 @@ export default function RootLayout({
           <main className="flex-1">{children}</main>
           <SiteFooter />
           <CartDrawer />
+          <CartSessionSync />
         </SessionProvider>
       </body>
     </html>
