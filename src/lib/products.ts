@@ -42,9 +42,11 @@ export type ProductVariantView = {
   stock: number;
 };
 
+export type ProductImageView = { url: string; color: string | null };
+
 export type ProductDetail = ProductListItem & {
   description: string;
-  images: string[];
+  images: ProductImageView[];
   colors: ProductColor[];
   sizes: string[];
   variants: ProductVariantView[];
@@ -353,7 +355,7 @@ export const getProductBySlug = cache(async (slug: string): Promise<ProductDetai
     stock: product.variants.reduce((sum, v) => sum + v.stock, 0),
     isFeatured: product.isFeatured,
     description: product.description,
-    images: product.images.map((i) => i.url),
+    images: product.images.map((i) => ({ url: i.url, color: i.color })),
     colors: colorNames.map((name) => ({ name, hex: colorToHex(name) })),
     sizes: sortSizes([...new Set(product.variants.map((v) => v.size))]),
     variants: product.variants.map((v) => ({

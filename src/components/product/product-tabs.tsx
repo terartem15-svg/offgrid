@@ -4,54 +4,37 @@ import Image from "next/image";
 import { useState } from "react";
 import { Dot } from "lucide-react";
 
+import { useTranslations } from "@/lib/i18n";
 import type { ProductDetail } from "@/lib/products";
 import { cn } from "@/lib/utils";
 
-const TABS = [
-  { id: "details", label: "Details" },
-  { id: "materials", label: "Materials" },
-  { id: "fit", label: "Size & Fit" },
-  { id: "shipping", label: "Shipping & Returns" },
-] as const;
-
-type TabId = (typeof TABS)[number]["id"];
-
-// Care, fit and policy copy is identical storefront-wide — it isn't
-// per-product data, so it lives here rather than in the database.
-const MATERIALS = [
-  "Heavyweight cotton, garment-washed for a broken-in hand",
-  "Ribbed cuffs and hem hold their shape",
-  "Woven brand label at the interior collar",
-  "Imported — machine wash cold, hang to dry",
-];
-
-const SIZE_AND_FIT = [
-  "Model is 186 cm and wears size M",
-  "Relaxed, boxy fit — size down for a regular fit",
-  "Drop shoulder with an extended body length",
-];
-
-const SHIPPING_AND_RETURNS = [
-  "Free express shipping on orders over €150",
-  "Delivered in 2–4 business days",
-  "Free 30-day returns on unworn items",
-  "Every order ships carbon-neutral",
-];
+type TabId = "details" | "materials" | "fit" | "shipping";
 
 export function ProductTabs({ product }: { product: ProductDetail }) {
+  const t = useTranslations().productPage;
   const [active, setActive] = useState<TabId>("details");
 
+  const TABS: { id: TabId; label: string }[] = [
+    { id: "details", label: t.tabs.details },
+    { id: "materials", label: t.tabs.materials },
+    { id: "fit", label: t.tabs.fit },
+    { id: "shipping", label: t.tabs.shipping },
+  ];
+
+  // Care, fit and policy copy is identical storefront-wide — it isn't
+  // per-product data, so it comes from the translation dictionary rather
+  // than the database.
   const content: Record<TabId, string[]> = {
     details: product.description
       .split(/(?<=[.!?])\s+/)
       .map((sentence) => sentence.trim())
       .filter(Boolean),
-    materials: MATERIALS,
-    fit: SIZE_AND_FIT,
-    shipping: SHIPPING_AND_RETURNS,
+    materials: t.materials,
+    fit: t.sizeAndFit,
+    shipping: t.shippingAndReturns,
   };
 
-  const detailImage = product.images[1] ?? product.images[0];
+  const detailImage = (product.images[1] ?? product.images[0])?.url;
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-16">
