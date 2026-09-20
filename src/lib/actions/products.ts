@@ -138,10 +138,28 @@ export async function updateProduct(
         },
       });
 
-      await tx.productImage.deleteMany({ where: { productId: id } });
-      await tx.productImage.createMany({
-        data: data.images.map((url, i) => ({ productId: id, url, position: i })),
-      });
+      // The form only submits image URLs, so match them to the rows already stored instead of
+      // deleting and recreating everything: a recreated row would lose its `color` (which the
+      // storefront gallery filters on) and its `alt` text. Only URLs the admin removed are deleted.
+      const storedImages = await tx.productImage.findMany({ where: { productId: id } });
+      const storedByUrl = new Map<string, (typeof storedImages)[number]>();
+      for (const image of storedImages) if (!storedByUrl.has(image.url)) storedByUrl.set(image.url, image);
+
+      const keptImageIds: string[] = [];
+      for (const [position, url] of data.images.entries()) {
+        const stored = storedByUrl.get(url);
+        if (stored) {
+          storedByUrl.delete(url); // a URL listed twice keeps one row and creates one new row
+          keptImageIds.push(stored.id);
+          if (stored.position !== position) {
+            await tx.productImage.update({ where: { id: stored.id }, data: { position } });
+          }
+        } else {
+          const created = await tx.productImage.create({ data: { productId: id, url, position } });
+          keptImageIds.push(created.id);
+        }
+      }
+      await tx.productImage.deleteMany({ where: { productId: id, id: { notIn: keptImageIds } } });
 
       const keepIds = data.variants.filter((v) => v.id).map((v) => v.id!);
       // `notIn: []` (no existing variants kept) correctly matches — and
