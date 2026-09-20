@@ -1,6 +1,9 @@
+import { Gender } from "@prisma/client";
 import type { Metadata } from "next";
 
+import { CatalogEmptyState, CatalogHeading } from "@/components/catalog/catalog-heading";
 import { FilterSidebar } from "@/components/catalog/filter-sidebar";
+import { Pagination } from "@/components/catalog/pagination";
 import { ProductCard } from "@/components/shared/product-card";
 import { getCatalogProducts, getFilterOptions } from "@/lib/products";
 
@@ -10,54 +13,96 @@ export const metadata: Metadata = {
 
 type CatalogPageProps = {
   searchParams: Promise<{
-    category?: string;
+    gender?: string | string[];
+    category?: string | string[];
     brand?: string | string[];
     size?: string | string[];
+    color?: string | string[];
     priceMin?: string;
     priceMax?: string;
+    featured?: string;
+    sort?: string;
+    sale?: string;
+    page?: string;
   }>;
 };
 
 const asArray = (value?: string | string[]) =>
   value === undefined ? [] : Array.isArray(value) ? value : [value];
 
+const GENDER_BY_PARAM: Record<string, Gender> = {
+  men: Gender.MEN,
+  women: Gender.WOMEN,
+  unisex: Gender.UNISEX,
+};
+
+/** Rebuilds the catalog query string for a given page, preserving every other active filter. */
+function buildPageHref(params: Awaited<CatalogPageProps["searchParams"]>, page: number): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (key === "page" || value === undefined) continue;
+    for (const v of Array.isArray(value) ? value : [value]) search.append(key, v);
+  }
+  if (page > 1) search.set("page", String(page));
+  const qs = search.toString();
+  return qs ? `/catalog?${qs}` : "/catalog";
+}
+
 export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const params = await searchParams;
 
+  const genderParams = asArray(params.gender).map((g) => g.toLowerCase());
   const filters = {
-    category: params.category,
+    gender: genderParams
+      .map((g) => GENDER_BY_PARAM[g])
+      .filter((g): g is Gender => g !== undefined),
+    category: asArray(params.category),
     brand: asArray(params.brand),
     size: asArray(params.size),
+    color: asArray(params.color),
     priceMin: params.priceMin ? Number(params.priceMin) : undefined,
     priceMax: params.priceMax ? Number(params.priceMax) : undefined,
+    featured: params.featured === "true" || params.featured === "1",
+    sort: params.sort === "newest" ? ("newest" as const) : undefined,
+    sale: params.sale === "true" || params.sale === "1",
+    page: params.page ? Number(params.page) : undefined,
   };
 
-  const [{ items, categoryName }, options] = await Promise.all([
+  const [{ items, categoryName, total, pageCount, page: currentPage }, options] = await Promise.all([
     getCatalogProducts(filters),
     getFilterOptions(),
   ]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
-      <h1 className="text-2xl font-semibold uppercase tracking-[0.14em] text-ink">
-        {categoryName ?? "All Products"}
-      </h1>
-      <p className="mt-1 text-sm text-ink/50">{items.length} items</p>
+      <CatalogHeading
+        categoryName={categoryName}
+        featured={filters.featured}
+        genders={genderParams}
+        sort={filters.sort ?? null}
+        sale={filters.sale}
+        itemCount={total}
+      />
 
       <div className="mt-10 flex flex-col gap-10 lg:flex-row">
         <FilterSidebar options={options} />
 
         <div className="flex-1">
           {items.length === 0 ? (
-            <p className="py-16 text-center text-sm text-ink/50">
-              No products match these filters.
-            </p>
+            <CatalogEmptyState />
           ) : (
-            <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
-              {items.map((product) => (
-                <ProductCard key={product.slug} product={product} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
+                {items.map((product) => (
+                  <ProductCard key={product.slug} product={product} />
+                ))}
+              </div>
+              <Pagination
+                currentPage={currentPage}
+                pageCount={pageCount}
+                buildHref={(page) => buildPageHref(params, page)}
+              />
+            </>
           )}
         </div>
       </div>
