@@ -1,12 +1,25 @@
-const priceFormatter = new Intl.NumberFormat("en-IE", {
+const wholePriceFormatter = new Intl.NumberFormat("en-IE", {
   style: "currency",
   currency: "EUR",
   maximumFractionDigits: 0,
 });
+const centsPriceFormatter = new Intl.NumberFormat("en-IE", {
+  style: "currency",
+  currency: "EUR",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
-/** Format a EUR amount for display, e.g. 1699 -> "€1,699". */
+/**
+ * Format a EUR amount for display: whole euros stay compact ("€1,699"), but an amount that has
+ * cents shows them ("€138.99"). Rounding to whole euros used to show a €9.99 shipping fee as
+ * "€10" and a €138.99 total as "€139" while Stripe charges the exact cents.
+ */
 export function formatPrice(amount: number) {
-  return priceFormatter.format(amount);
+  const cents = Math.round(amount * 100);
+  return cents % 100 === 0
+    ? wholePriceFormatter.format(cents / 100)
+    : centsPriceFormatter.format(cents / 100);
 }
 
 /** Discount percentage from a compare-at price, rounded to an integer. */
