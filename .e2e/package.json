@@ -1,0 +1,10 @@
+{
+  "name": "offgrid-e2e",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Local-only tooling for payment tests (temp Postgres + browser automation). Not part of the shop app.",
+  "dependencies": {
+    "embedded-postgres": "^17.5.0-beta.15",
+    "playwright-core": "^1.63.0"
+  }
+}
