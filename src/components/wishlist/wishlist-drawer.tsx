@@ -12,7 +12,8 @@ import { cn } from "@/lib/utils";
 import { useWishlistStore } from "@/store/wishlist";
 
 export function WishlistDrawer() {
-  const t = useTranslations().wishlist;
+  const dict = useTranslations();
+  const t = dict.wishlist;
   const isOpen = useWishlistStore((s) => s.isOpen);
   const close = useWishlistStore((s) => s.close);
   const items = useWishlistStore((s) => s.items);
@@ -124,7 +125,7 @@ export function WishlistDrawer() {
                     <button
                       type="button"
                       onClick={() => removeItem(item.slug)}
-                      aria-label={`Remove ${item.name}`}
+                      aria-label={dict.cart.remove(item.name)}
                       className="text-ink/40 hover:text-ink"
                     >
                       <X className="h-4 w-4" />

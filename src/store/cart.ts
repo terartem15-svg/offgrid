@@ -39,8 +39,24 @@ type CartState = {
   setUser: (userId: string | null) => void;
 };
 
+/** Most units of one line a cart can hold — the same cap `/api/checkout` enforces per line. */
+export const MAX_LINE_QUANTITY = 20;
+
+const clampQuantity = (quantity: number) => Math.min(MAX_LINE_QUANTITY, quantity);
+
 const lineId = (slug: string, size?: string, color?: string) =>
   [slug, size ?? "-", color ?? "-"].join("::");
+
+/** `base` with `extra` added on top — matching lines add up their quantities. */
+function mergeLines(base: CartLine[], extra: CartLine[]): CartLine[] {
+  const merged = [...base];
+  for (const line of extra) {
+    const index = merged.findIndex((existing) => existing.id === line.id);
+    if (index === -1) merged.push(line);
+    else merged[index] = { ...merged[index], quantity: clampQuantity(merged[index].quantity + line.quantity) };
+  }
+  return merged;
+}
 
 export const useCartStore = create<CartState>()(
   persist(
@@ -58,14 +74,14 @@ export const useCartStore = create<CartState>()(
             return {
               items: state.items.map((line) =>
                 line.id === id
-                  ? { ...line, quantity: line.quantity + qty }
+                  ? { ...line, quantity: clampQuantity(line.quantity + qty) }
                   : line,
               ),
               isOpen: true,
             };
           }
           return {
-            items: [...state.items, { ...input, id, quantity: qty }],
+            items: [...state.items, { ...input, id, quantity: clampQuantity(qty) }],
             isOpen: true,
           };
         }),
@@ -77,7 +93,7 @@ export const useCartStore = create<CartState>()(
         set((state) => ({
           items: state.items
             .map((line) =>
-              line.id === id ? { ...line, quantity } : line,
+              line.id === id ? { ...line, quantity: clampQuantity(quantity) } : line,
             )
             .filter((line) => line.quantity > 0),
         })),
@@ -94,10 +110,17 @@ export const useCartStore = create<CartState>()(
           // is what keeps signing out / switching accounts from leaking
           // one user's cart into another's.
           const carts = { ...state.carts, [state.activeUserKey]: state.items };
+          let items = carts[nextKey] ?? [];
+          // Signing in takes the guest's cart along: checkout sends guests to
+          // the sign-in page, and they must find their cart there afterwards.
+          if (state.activeUserKey === GUEST_KEY && userId) {
+            items = mergeLines(items, state.items);
+            carts[GUEST_KEY] = [];
+          }
           return {
             carts,
             activeUserKey: nextKey,
-            items: carts[nextKey] ?? [],
+            items,
             isOpen: false,
           };
         }),

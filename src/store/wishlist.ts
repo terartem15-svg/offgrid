@@ -57,10 +57,17 @@ export const useWishlistStore = create<WishlistState>()(
           // outgoing identity's items and swap in the incoming identity's
           // saved wishlist, so signing out never leaks one user's list into another's.
           const lists = { ...state.lists, [state.activeUserKey]: state.items };
+          let items = lists[nextKey] ?? [];
+          // Like the cart, signing in keeps what was saved as a guest.
+          if (state.activeUserKey === GUEST_KEY && userId) {
+            const saved = new Set(items.map((item) => item.slug));
+            items = [...items, ...state.items.filter((item) => !saved.has(item.slug))];
+            lists[GUEST_KEY] = [];
+          }
           return {
             lists,
             activeUserKey: nextKey,
-            items: lists[nextKey] ?? [],
+            items,
             isOpen: false,
           };
         }),

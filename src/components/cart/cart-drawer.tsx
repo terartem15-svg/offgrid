@@ -11,6 +11,7 @@ import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
   FREE_SHIPPING_THRESHOLD,
+  MAX_LINE_QUANTITY,
   selectCartSubtotal,
   useCartStore,
 } from "@/store/cart";
@@ -162,7 +163,7 @@ export function CartDrawer() {
                       <button
                         type="button"
                         onClick={() => removeItem(line.id)}
-                        aria-label={`Remove ${line.name}`}
+                        aria-label={t.remove(line.name)}
                         className="text-ink/40 hover:text-ink"
                       >
                         <X className="h-4 w-4" />
@@ -174,7 +175,7 @@ export function CartDrawer() {
                         <button
                           type="button"
                           onClick={() => setQuantity(line.id, line.quantity - 1)}
-                          aria-label="Decrease quantity"
+                          aria-label={t.decrease}
                           className="flex h-7 w-7 items-center justify-center hover:bg-ink/5"
                         >
                           <Minus className="h-3 w-3" />
@@ -185,8 +186,9 @@ export function CartDrawer() {
                         <button
                           type="button"
                           onClick={() => setQuantity(line.id, line.quantity + 1)}
-                          aria-label="Increase quantity"
-                          className="flex h-7 w-7 items-center justify-center hover:bg-ink/5"
+                          disabled={line.quantity >= MAX_LINE_QUANTITY}
+                          aria-label={t.increase}
+                          className="flex h-7 w-7 items-center justify-center hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-30"
                         >
                           <Plus className="h-3 w-3" />
                         </button>
