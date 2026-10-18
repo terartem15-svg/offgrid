@@ -35,8 +35,10 @@ export default async function AdminOrderDetailPage({ params }: OrderDetailPagePr
   if (!order) notFound();
 
   const address = (order.shippingAddress ?? {}) as ShippingAddress;
-  const customerName = order.user?.name ?? order.user?.email ?? order.guestName ?? "Guest";
-  const customerContact = order.user?.email ?? order.guestPhone ?? "—";
+  const customerName = order.user?.name ?? order.guestName ?? order.user?.email ?? "Guest";
+  // Quick orders carry a phone even when placed from an account — it's what the manager calls.
+  const customerContact =
+    [order.user?.email, order.guestPhone].filter(Boolean).join(" · ") || "—";
 
   return (
     <div>
@@ -47,7 +49,7 @@ export default async function AdminOrderDetailPage({ params }: OrderDetailPagePr
           </h1>
           <p className="mt-1 text-sm text-ink/50">
             {customerName} · {customerContact}
-            {!order.user && order.guestEmail && ` · ${order.guestEmail}`} ·{" "}
+            {order.guestEmail && order.guestEmail !== order.user?.email && ` · ${order.guestEmail}`} ·{" "}
             {order.createdAt.toLocaleString()}
             {!order.user && (
               <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">

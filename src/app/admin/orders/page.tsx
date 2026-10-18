@@ -90,12 +90,8 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-ink/70">
-                  {order.user?.email ?? (
-                    <span>
-                      {order.guestName ?? "Guest"}
-                      {order.guestPhone && ` · ${order.guestPhone}`}
-                    </span>
-                  )}
+                  {order.user?.email ?? order.guestName ?? "Guest"}
+                  {order.guestPhone && ` · ${order.guestPhone}`}
                 </td>
                 <td className="px-4 py-3 text-ink/70">{order.fulfillmentMethod}</td>
                 <td className="px-4 py-3 text-ink/70">{order.items.length}</td>

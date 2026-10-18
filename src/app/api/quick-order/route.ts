@@ -22,10 +22,10 @@ const quickOrderSchema = z
     size: z.string().optional(),
     color: z.string().optional(),
     fulfillmentMethod: z.enum(["DELIVERY", "PICKUP"]),
-    name: z.string().min(1).max(120),
-    phone: z.string().min(4).max(40),
-    email: z.string().max(200).optional(),
-    address: z.string().max(300).optional(),
+    name: z.string().trim().min(1).max(120),
+    phone: z.string().trim().min(4).max(40),
+    email: z.string().trim().max(200).optional(),
+    address: z.string().trim().max(300).optional(),
   })
   .refine((data) => data.fulfillmentMethod === "PICKUP" || Boolean(data.address?.trim()), {
     message: "Address is required for delivery",
@@ -63,10 +63,11 @@ export async function POST(request: Request) {
     }
   }
 
-  const variant = await prisma.productVariant.findFirst({
+  // Same rule as `/api/checkout`: the size/color must point at exactly one variant.
+  const matches = await prisma.productVariant.findMany({
     where: {
-      size: size ?? undefined,
-      color: color ?? undefined,
+      size: size || undefined,
+      color: color || undefined,
       product: { slug, status: "ACTIVE" },
     },
     include: {
@@ -77,7 +78,9 @@ export async function POST(request: Request) {
         },
       },
     },
+    take: 2,
   });
+  const variant = matches.length === 1 ? matches[0] : null;
 
   if (!variant || variant.stock < 1) {
     return NextResponse.json(
@@ -108,9 +111,11 @@ export async function POST(request: Request) {
           userId,
           status: "PENDING",
           fulfillmentMethod,
-          guestName: userId ? null : name,
-          guestPhone: userId ? null : phone,
-          guestEmail: userId ? null : email || null,
+          // The manager calls back on these, so they're kept for signed-in customers too —
+          // an account has no phone number, and a pickup order has no address to carry one.
+          guestName: name,
+          guestPhone: phone,
+          guestEmail: email || null,
           guestIp: ip,
           subtotal,
           shipping,

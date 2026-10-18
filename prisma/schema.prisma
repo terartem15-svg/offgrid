@@ -267,8 +267,8 @@ model Order {
 
   fulfillmentMethod FulfillmentMethod @default(DELIVERY)
 
-  // Set instead of `user` for guest "buy now" orders placed without an account —
-  // a manager calls back on `guestPhone` to confirm, CIS quick-order style.
+  // Contact details from the "buy now" quick-order form (with or without an
+  // account) — a manager calls back on `guestPhone` to confirm, CIS quick-order style.
   guestName  String?
   guestPhone String?
   guestEmail String?
