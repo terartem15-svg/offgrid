@@ -40,19 +40,30 @@ export function AutoScrollRow({
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduceMotion) return;
 
-    // The children are two back-to-back copies of the same list — wrapping
-    // by exactly half the scroll width, in either direction, is invisible
-    // to the eye and is what makes the loop feel endless.
-    const wrap = () => {
-      const halfWidth = track.scrollWidth / 2;
-      if (track.scrollLeft >= halfWidth) track.scrollLeft -= halfWidth;
-      else if (track.scrollLeft <= 0) track.scrollLeft += halfWidth;
-    };
-    track.addEventListener("scroll", wrap);
-
     // Scrolling right visually means walking the content backwards — start
     // mid-way through the doubled list so there's room to decrement.
     if (direction === "right") track.scrollLeft = track.scrollWidth / 2;
+
+    // The exact (fractional) offset lives here. At 1x zoom the browser rounds
+    // `scrollLeft` to whole pixels, so adding the per-frame step to it directly
+    // (0.3px at 45px/s on a 144 Hz screen) rounded back to zero every frame
+    // and the row never moved.
+    let position = track.scrollLeft;
+
+    // The children are two back-to-back copies of the same list — wrapping
+    // by exactly half the scroll width, in either direction, is invisible
+    // to the eye and is what makes the loop feel endless. The forward wrap
+    // waits until the row is strictly past the halfway point: exactly
+    // `halfWidth` is where a right-moving row starts (and where `<= 0` sends
+    // it), so wrapping there too bounced the row between 0 and halfWidth.
+    const wrap = () => {
+      const halfWidth = track.scrollWidth / 2;
+      if (track.scrollLeft > halfWidth) track.scrollLeft -= halfWidth;
+      else if (track.scrollLeft <= 0) track.scrollLeft += halfWidth;
+      // A swipe or the wrap above moved the row — carry on from where it is now.
+      if (Math.abs(track.scrollLeft - position) >= 1) position = track.scrollLeft;
+    };
+    track.addEventListener("scroll", wrap);
 
     const sign = direction === "left" ? 1 : -1;
     let raf = 0;
@@ -61,7 +72,10 @@ export function AutoScrollRow({
       if (lastTime == null) lastTime = time;
       const deltaSeconds = (time - lastTime) / 1000;
       lastTime = time;
-      if (!pausedRef.current) track.scrollLeft += sign * pixelsPerSecond * deltaSeconds;
+      if (!pausedRef.current) {
+        position += sign * pixelsPerSecond * deltaSeconds;
+        track.scrollLeft = position;
+      }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
