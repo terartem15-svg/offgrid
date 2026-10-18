@@ -11,7 +11,9 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { WishlistDrawer } from "@/components/wishlist/wishlist-drawer";
 import { WishlistSessionSync } from "@/components/wishlist/wishlist-session-sync";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+// Romanian (ș, ț, ă) needs latin-ext and Russian needs cyrillic — without them those
+// languages fall back to a system font mid-sentence.
+const inter = Inter({ subsets: ["latin", "latin-ext", "cyrillic"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: {
@@ -26,7 +28,9 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={inter.variable}>
+    // The server renders the default region's language (Romanian); RegionSwitcher keeps
+    // `lang` in step once the visitor's saved choice is known.
+    <html lang="ro" className={inter.variable}>
       <body className="flex min-h-screen flex-col bg-white font-sans text-ink">
         <SessionProvider>
           <NotificationBar />

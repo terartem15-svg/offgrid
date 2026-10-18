@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, Search, X } from "lucide-react";
 
 import { formatPrice } from "@/lib/format";
+import { useTranslations } from "@/lib/i18n";
 import type { SearchResultItem } from "@/lib/products";
 
 type SearchModalProps = {
@@ -14,6 +15,7 @@ type SearchModalProps = {
 };
 
 export function SearchModal({ open, onClose }: SearchModalProps) {
+  const t = useTranslations().search;
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -78,14 +80,15 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             type="text"
-            placeholder="Search products or brands…"
+            aria-label={t.placeholder}
+            placeholder={t.placeholder}
             className="flex-1 border-none bg-transparent text-sm text-ink outline-none placeholder:text-ink/40"
           />
           {loading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-ink/40" />}
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close search"
+            aria-label={t.close}
             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md hover:bg-ink/5"
           >
             <X className="h-4 w-4" />
@@ -95,11 +98,11 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
         <div className="max-h-[60vh] overflow-y-auto">
           {query.trim() === "" ? (
             <p className="px-5 py-10 text-center text-sm text-ink/40">
-              Start typing to search the catalog.
+              {t.prompt}
             </p>
           ) : !loading && results.length === 0 ? (
             <p className="px-5 py-10 text-center text-sm text-ink/40">
-              No products match &ldquo;{query}&rdquo;.
+              {t.noResults(query.trim())}
             </p>
           ) : (
             <ul className="divide-y divide-ink/10">

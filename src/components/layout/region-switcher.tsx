@@ -34,6 +34,11 @@ export function RegionSwitcher() {
   const region = regionByCode(mounted ? code : DEFAULT_REGION_CODE);
   const t = useTranslations().regionSwitcher;
 
+  // Screen readers and the browser's hyphenation/translation follow <html lang>.
+  useEffect(() => {
+    document.documentElement.lang = region.lang;
+  }, [region.lang]);
+
   return (
     <>
       <button

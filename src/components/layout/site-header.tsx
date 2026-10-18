@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Search, User } from "lucide-react";
 
 import { CartIndicator } from "@/components/layout/cart-indicator";
@@ -25,6 +25,8 @@ const NAV_HREFS = [
 
 export function SiteHeader() {
   const [searchOpen, setSearchOpen] = useState(false);
+  // Stable, because SearchModal resets its query whenever `onClose` changes identity.
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
   const t = useTranslations();
   const { onHomeClick, onContactClick } = useNavClickHandlers();
 
@@ -69,7 +71,7 @@ export function SiteHeader() {
           <RegionSwitcher />
           <button
             type="button"
-            aria-label="Search"
+            aria-label={t.nav.search}
             onClick={() => setSearchOpen(true)}
             className="inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-ink/5"
           >
@@ -77,7 +79,7 @@ export function SiteHeader() {
           </button>
           <Link
             href="/account"
-            aria-label="Account"
+            aria-label={t.nav.account}
             // Below sm the drawer carries this link instead, to keep the header from overflowing.
             className="hidden h-10 w-10 items-center justify-center rounded-md hover:bg-ink/5 sm:inline-flex"
           >
@@ -88,7 +90,7 @@ export function SiteHeader() {
         </div>
       </div>
 
-      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <SearchModal open={searchOpen} onClose={closeSearch} />
     </header>
   );
 }
