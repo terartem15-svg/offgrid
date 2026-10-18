@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -12,8 +13,10 @@ const REGISTER_MAX_PER_IP = 10;
 const REGISTER_WINDOW_SECONDS = 60 * 60;
 
 const registerSchema = z.object({
-  name: z.string().min(1).max(120),
-  email: z.string().email(),
+  name: z.string().trim().min(1).max(120),
+  // Stored lowercased: sign-in looks the address up the same way, so "Anna@Mail.com" and
+  // "anna@mail.com" are one account rather than two.
+  email: z.string().trim().toLowerCase().email().max(254),
   password: z.string().min(8).max(72),
 });
 
@@ -41,19 +44,32 @@ export async function POST(request: Request) {
 
   const { name, email, password } = parsed.data;
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return NextResponse.json(
-      { error: "An account with this email already exists" },
-      { status: 409 },
-    );
-  }
+  // Case-insensitive, so accounts created before emails were lowercased still count.
+  const existing = await prisma.user.findFirst({
+    where: { email: { equals: email, mode: "insensitive" } },
+    select: { id: true },
+  });
+  if (existing) return emailTaken();
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({
-    data: { name, email, passwordHash },
-    select: { id: true, email: true, name: true },
-  });
+  try {
+    const user = await prisma.user.create({
+      data: { name, email, passwordHash },
+      select: { id: true, email: true, name: true },
+    });
+    return NextResponse.json({ user }, { status: 201 });
+  } catch (error) {
+    // Two sign-ups with the same address at once: the unique index lets only one through.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return emailTaken();
+    }
+    throw error;
+  }
+}
 
-  return NextResponse.json({ user }, { status: 201 });
+function emailTaken() {
+  return NextResponse.json(
+    { error: "An account with this email already exists", code: "email_taken" },
+    { status: 409 },
+  );
 }

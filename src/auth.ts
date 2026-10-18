@@ -31,14 +31,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const password = credentials?.password;
         if (typeof email !== "string" || typeof password !== "string") return null;
 
-        const emailKey = `login:email:${email.trim().toLowerCase().slice(0, 254)}`;
+        const normalizedEmail = email.trim().toLowerCase().slice(0, 254);
+        const emailKey = `login:email:${normalizedEmail}`;
         const [byEmail, byIp] = await Promise.all([
           consumeRateLimit(emailKey, LOGIN_MAX_PER_EMAIL, LOGIN_WINDOW_SECONDS),
           consumeRateLimit(`login:ip:${clientIp(request) ?? "unknown"}`, LOGIN_MAX_PER_IP, LOGIN_WINDOW_SECONDS),
         ]);
         if (!byEmail.allowed || !byIp.allowed) throw new TooManyAttemptsError();
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        // Sign-up stores emails lowercased; the case-insensitive match also finds accounts
+        // created before that, so "Anna@Mail.com" can sign in however it is typed.
+        const user = await prisma.user.findFirst({
+          where: { email: { equals: normalizedEmail, mode: "insensitive" } },
+        });
         if (!user?.passwordHash) return null;
 
         const valid = await bcrypt.compare(password, user.passwordHash);
