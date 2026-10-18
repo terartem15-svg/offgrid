@@ -30,7 +30,7 @@ export default async function AccountPage() {
         id: order.id,
         number: order.number,
         createdAt: order.createdAt,
-        itemCount: order.items.length,
+        itemCount: order.items.reduce((count, item) => count + item.quantity, 0),
         status: order.status,
         totalCents: order.total,
       }))}

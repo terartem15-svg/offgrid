@@ -5,9 +5,17 @@ import Link from "next/link";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { buttonVariants } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
-import { useTranslations } from "@/lib/i18n";
+import { useLang, useTranslations } from "@/lib/i18n";
 import type { Dictionary } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+
+/**
+ * Order dates are rendered on the server and again in the browser, so they use a fixed locale
+ * and the shop's time zone — `toLocaleDateString()` with the runtime defaults printed a
+ * different date format on each side and broke hydration.
+ */
+const DATE_LOCALE: Record<ReturnType<typeof useLang>, string> = { en: "en-GB", ro: "ro-RO", ru: "ru-RU" };
+const SHOP_TIME_ZONE = "Europe/Chisinau";
 
 type SignedOutViewProps = { kind: "signed-out" };
 
@@ -36,6 +44,7 @@ type AccountViewProps = SignedOutViewProps | SignedInViewProps;
  */
 export function AccountView(props: AccountViewProps) {
   const t = useTranslations().account;
+  const lang = useLang();
 
   if (props.kind === "signed-out") {
     return (
@@ -57,6 +66,10 @@ export function AccountView(props: AccountViewProps) {
   }
 
   const { name, email, isAdmin, orders } = props;
+  const dateFormat = new Intl.DateTimeFormat(DATE_LOCALE[lang], {
+    dateStyle: "medium",
+    timeZone: SHOP_TIME_ZONE,
+  });
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-16">
@@ -103,7 +116,7 @@ export function AccountView(props: AccountViewProps) {
               <div>
                 <p className="text-sm font-medium text-ink">{order.number}</p>
                 <p className="text-xs text-ink/50">
-                  {order.createdAt.toLocaleDateString()} · {order.itemCount}{" "}
+                  {dateFormat.format(order.createdAt)} · {order.itemCount}{" "}
                   {order.itemCount === 1 ? t.item : t.items} ·{" "}
                   {t.statusLabels[order.status]}
                 </p>
