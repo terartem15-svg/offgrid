@@ -27,8 +27,10 @@ export type ProductFormInitial = {
   slug: string;
   description: string;
   basePrice: number;
+  compareAtPrice: number | null;
   brandId: string;
   categoryId: string;
+  gender: "MEN" | "WOMEN" | "UNISEX";
   status: "DRAFT" | "ACTIVE" | "ARCHIVED";
   isFeatured: boolean;
   images: string[];
@@ -89,6 +91,10 @@ export function ProductForm({ mode, productId, brands, categories, initial }: Pr
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [basePrice, setBasePrice] = useState(initial ? String(initial.basePrice) : "");
+  const [compareAtPrice, setCompareAtPrice] = useState(
+    initial?.compareAtPrice != null ? String(initial.compareAtPrice) : "",
+  );
+  const [gender, setGender] = useState(initial?.gender ?? "MEN");
   const [brandId, setBrandId] = useState(initial?.brandId ?? brands[0]?.id ?? "");
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? categories[0]?.id ?? "");
   const [status, setStatus] = useState(initial?.status ?? "ACTIVE");
@@ -124,8 +130,10 @@ export function ProductForm({ mode, productId, brands, categories, initial }: Pr
       slug,
       description,
       basePrice: Number(basePrice) || 0,
+      compareAtPrice: compareAtPrice.trim() ? Number(compareAtPrice) : null,
       brandId,
       categoryId,
+      gender,
       status,
       isFeatured,
       images: images.map((i) => i.trim()).filter(Boolean),
@@ -235,7 +243,7 @@ export function ProductForm({ mode, productId, brands, categories, initial }: Pr
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div>
           <Label htmlFor="basePrice">Base Price (EUR)</Label>
           <Input
@@ -251,6 +259,30 @@ export function ProductForm({ mode, productId, brands, categories, initial }: Pr
           {fieldError("basePrice") && (
             <p className="mt-1 text-xs text-red-600">{fieldError("basePrice")}</p>
           )}
+        </div>
+        <div>
+          {/* Filled in = the product is on sale: the storefront strikes this price through. */}
+          <Label htmlFor="compareAtPrice">Old Price (EUR, optional)</Label>
+          <Input
+            id="compareAtPrice"
+            type="number"
+            min={0}
+            step="0.01"
+            value={compareAtPrice}
+            onChange={(e) => setCompareAtPrice(e.target.value)}
+            className={cn(fieldError("compareAtPrice") && "border-red-400 focus:border-red-500")}
+          />
+          {fieldError("compareAtPrice") && (
+            <p className="mt-1 text-xs text-red-600">{fieldError("compareAtPrice")}</p>
+          )}
+        </div>
+        <div>
+          <Label htmlFor="gender">Gender</Label>
+          <Select id="gender" value={gender} onChange={(e) => setGender(e.target.value as typeof gender)}>
+            <option value="MEN">Men</option>
+            <option value="WOMEN">Women</option>
+            <option value="UNISEX">Unisex</option>
+          </Select>
         </div>
         <div>
           <Label htmlFor="brand">Brand</Label>

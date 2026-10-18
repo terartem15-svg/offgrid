@@ -7,30 +7,62 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/admin-guard";
 import { prisma } from "@/lib/prisma";
 
+/** Prices are stored as 32-bit cents; this keeps any accepted value far below that limit. */
+const MAX_PRICE_EUR = 1_000_000;
+
 const variantSchema = z.object({
   id: z.string().optional(),
   size: z.string().min(1).max(20),
   color: z.string().min(1).max(60),
-  stock: z.number().int().min(0),
-  priceOverride: z.number().min(0).nullable(),
+  stock: z.number().int().min(0).max(1_000_000),
+  priceOverride: z.number().min(0).max(MAX_PRICE_EUR).nullable(),
 });
 
-const productSchema = z.object({
-  name: z.string().min(1).max(200),
-  slug: z
-    .string()
-    .min(1)
-    .max(200)
-    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Slug must be lowercase, letters/numbers and hyphens only"),
-  description: z.string().min(1),
-  basePrice: z.number().min(0),
-  brandId: z.string().min(1),
-  categoryId: z.string().min(1),
-  status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]),
-  isFeatured: z.boolean(),
-  images: z.array(z.string().url()).min(1, "At least one image URL is required"),
-  variants: z.array(variantSchema).min(1, "At least one variant is required"),
-});
+const productSchema = z
+  .object({
+    name: z.string().min(1).max(200),
+    slug: z
+      .string()
+      .min(1)
+      .max(200)
+      .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Slug must be lowercase, letters/numbers and hyphens only"),
+    description: z.string().min(1),
+    basePrice: z.number().min(0).max(MAX_PRICE_EUR),
+    compareAtPrice: z.number().min(0).max(MAX_PRICE_EUR).nullable(),
+    brandId: z.string().min(1),
+    categoryId: z.string().min(1),
+    gender: z.enum(["MEN", "WOMEN", "UNISEX"]),
+    status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]),
+    isFeatured: z.boolean(),
+    // next/image only loads https sources (see next.config.ts) — an http URL would leave a blank photo.
+    images: z
+      .array(z.string().url().startsWith("https://", "Image URLs must start with https://"))
+      .min(1, "At least one image URL is required"),
+    variants: z.array(variantSchema).min(1, "At least one variant is required"),
+  })
+  .superRefine((data, ctx) => {
+    if (data.compareAtPrice != null && data.compareAtPrice <= data.basePrice) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["compareAtPrice"],
+        message: "The old price must be higher than the base price",
+      });
+    }
+    // Size + color is unique per product in the database; catch a repeat here with a clear message.
+    const seen = new Set<string>();
+    for (const variant of data.variants) {
+      const key = `${variant.size}\u0000${variant.color}`;
+      if (seen.has(key)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["variants"],
+          message: `${variant.size} / ${variant.color} is listed twice`,
+        });
+        break;
+      }
+      seen.add(key);
+    }
+  });
 
 export type ProductFormInput = z.infer<typeof productSchema>;
 export type ProductFormResult =
@@ -79,6 +111,8 @@ export async function createProduct(input: ProductFormInput): Promise<ProductFor
         slug: data.slug,
         description: data.description,
         basePrice: toCents(data.basePrice),
+        compareAtPrice: data.compareAtPrice != null ? toCents(data.compareAtPrice) : null,
+        gender: data.gender,
         status: data.status,
         isFeatured: data.isFeatured,
         brandId: data.brandId,
@@ -117,11 +151,14 @@ export async function updateProduct(
   if (!parsed.success) return validationError(parsed.error);
   const data = parsed.data;
 
+  // The product page is pre-rendered per slug, so a renamed slug must also refresh the old page.
+  let previousSlug: string | undefined;
   try {
     const existing = await prisma.product.findUnique({ where: { slug: data.slug } });
     if (existing && existing.id !== id) {
       return { error: "A product with this slug already exists" };
     }
+    previousSlug = (await prisma.product.findUnique({ where: { id }, select: { slug: true } }))?.slug;
 
     await prisma.$transaction(async (tx) => {
       await tx.product.update({
@@ -131,6 +168,8 @@ export async function updateProduct(
           slug: data.slug,
           description: data.description,
           basePrice: toCents(data.basePrice),
+          compareAtPrice: data.compareAtPrice != null ? toCents(data.compareAtPrice) : null,
+          gender: data.gender,
           status: data.status,
           isFeatured: data.isFeatured,
           brandId: data.brandId,
@@ -198,6 +237,7 @@ export async function updateProduct(
   revalidatePath(`/admin/products/${id}`);
   revalidatePath("/catalog");
   revalidatePath(`/products/${data.slug}`);
+  if (previousSlug && previousSlug !== data.slug) revalidatePath(`/products/${previousSlug}`);
   revalidatePath("/");
   return { success: true };
 }
@@ -205,8 +245,9 @@ export async function updateProduct(
 export async function deleteProduct(id: string): Promise<{ error: string } | never> {
   await requireAdmin();
 
+  let slug: string;
   try {
-    await prisma.product.delete({ where: { id } });
+    ({ slug } = await prisma.product.delete({ where: { id }, select: { slug: true } }));
   } catch (err) {
     console.error("deleteProduct failed:", err);
     return { error: "Something went wrong while deleting the product. Please try again." };
@@ -214,6 +255,7 @@ export async function deleteProduct(id: string): Promise<{ error: string } | nev
 
   revalidatePath("/admin/products");
   revalidatePath("/catalog");
+  revalidatePath(`/products/${slug}`);
   revalidatePath("/");
   redirect("/admin/products");
 }
