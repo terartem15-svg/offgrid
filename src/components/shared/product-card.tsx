@@ -3,13 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Heart, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { discountPercent, formatPrice, lowStockLabelCount } from "@/lib/format";
 import { productTypeLabel, useLang, useTranslations } from "@/lib/i18n";
-import type { ProductListItem } from "@/lib/products";
+import type { ProductListItem, ProductOption } from "@/lib/products";
 import { useCartStore } from "@/store/cart";
 import { useWishlistStore } from "@/store/wishlist";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,26 @@ type ProductCardProps = {
 const IMAGE_OVERLAY_BUTTON =
   "z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-ink opacity-0 shadow-sm backdrop-blur transition-opacity duration-300 hover:bg-white group-hover:opacity-100 group-focus-within:opacity-100";
 
+/**
+ * What the card's add-to-cart button can do. A cart line needs an exact size and color —
+ * without them checkout would have to guess the variant — so the card adds straight away only
+ * when there is nothing to choose, lists the sizes when there is a single colorway, and sends
+ * products with several colorways to their own page.
+ */
+type QuickAdd =
+  | { kind: "soldOut" }
+  | { kind: "single"; option: ProductOption }
+  | { kind: "sizes"; options: ProductOption[] }
+  | { kind: "page" };
+
+function quickAddFor(options: ProductOption[]): QuickAdd {
+  const inStock = options.filter((option) => option.stock > 0);
+  if (inStock.length === 0) return { kind: "soldOut" };
+  if (new Set(options.map((option) => option.color)).size > 1) return { kind: "page" };
+  if (options.length === 1) return { kind: "single", option: inStock[0] };
+  return { kind: "sizes", options };
+}
+
 export function ProductCard({ product, priority }: ProductCardProps) {
   const dict = useTranslations();
   const t = dict.productCard;
@@ -31,6 +51,7 @@ export function ProductCard({ product, priority }: ProductCardProps) {
   const isWishlisted = useWishlistStore((s) => s.items.some((i) => i.slug === product.slug));
   const toggleWishlist = useWishlistStore((s) => s.toggleItem);
   const [added, setAdded] = useState(false);
+  const [pickingSize, setPickingSize] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
 
@@ -42,6 +63,7 @@ export function ProductCard({ product, priority }: ProductCardProps) {
   const typeLabel = productTypeLabel(product.categorySlug, product.gender, product.name, lang);
   const discount = product.compareAtPrice ? discountPercent(product.price, product.compareAtPrice) : 0;
   const lowStockCount = lowStockLabelCount(product.slug, product.stock);
+  const quickAdd = quickAddFor(product.options);
 
   const cycleImage = (e: React.MouseEvent, delta: number) => {
     e.preventDefault();
@@ -49,14 +71,17 @@ export function ProductCard({ product, priority }: ProductCardProps) {
     setImageIndex((i) => (i + delta + images.length) % images.length);
   };
 
-  const handleAdd = () => {
+  const addOption = (option: ProductOption) => {
     addItem({
       slug: product.slug,
       name: product.name,
       brand: product.brand,
-      price: product.price,
+      price: option.price,
       image: product.image,
+      size: option.size,
+      color: option.color,
     });
+    setPickingSize(false);
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1500);
   };
@@ -115,7 +140,7 @@ export function ProductCard({ product, priority }: ProductCardProps) {
           <>
             <button
               type="button"
-              aria-label="Previous image"
+              aria-label={t.previousImage}
               onClick={(e) => cycleImage(e, -1)}
               className={cn("absolute left-2 top-1/2 -translate-y-1/2", IMAGE_OVERLAY_BUTTON)}
             >
@@ -123,7 +148,7 @@ export function ProductCard({ product, priority }: ProductCardProps) {
             </button>
             <button
               type="button"
-              aria-label="Next image"
+              aria-label={t.nextImage}
               onClick={(e) => cycleImage(e, 1)}
               className={cn("absolute right-2 top-1/2 -translate-y-1/2", IMAGE_OVERLAY_BUTTON)}
             >
@@ -162,19 +187,63 @@ export function ProductCard({ product, priority }: ProductCardProps) {
           )}
         </div>
 
-        <Button
-          onClick={handleAdd}
-          size="sm"
-          className={cn("mt-3 w-full", added && "bg-emerald-600 hover:bg-emerald-600")}
-        >
-          {added ? (
-            <>
-              <Check className="h-4 w-4" /> {t.added}
-            </>
-          ) : (
-            t.addToCart
-          )}
-        </Button>
+        {quickAdd.kind === "sizes" && pickingSize ? (
+          <div role="group" aria-label={t.chooseSize} className="mt-3">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-ink/60">
+                {t.chooseSize}
+              </p>
+              <button
+                type="button"
+                onClick={() => setPickingSize(false)}
+                aria-label={t.closeSizes}
+                className="inline-flex h-6 w-6 items-center justify-center rounded text-ink/50 hover:bg-ink/5 hover:text-ink"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {quickAdd.options.map((option) => (
+                <button
+                  key={option.size}
+                  type="button"
+                  onClick={() => addOption(option)}
+                  disabled={option.stock <= 0}
+                  className="h-8 min-w-[2.5rem] rounded-md border border-ink/20 bg-white px-2 text-xs font-medium text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-ink/30 disabled:line-through"
+                >
+                  {option.size}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : quickAdd.kind === "page" ? (
+          <Link
+            href={`/products/${product.slug}`}
+            className={cn(buttonVariants({ size: "sm" }), "mt-3 w-full")}
+          >
+            {t.chooseOptions}
+          </Link>
+        ) : (
+          <Button
+            onClick={() => {
+              if (quickAdd.kind === "single") addOption(quickAdd.option);
+              else if (quickAdd.kind === "sizes") setPickingSize(true);
+            }}
+            disabled={quickAdd.kind === "soldOut"}
+            size="sm"
+            className={cn("mt-3 w-full", added && "bg-emerald-600 hover:bg-emerald-600")}
+          >
+            {added ? (
+              <>
+                <Check className="h-4 w-4" /> {t.added}
+              </>
+            ) : quickAdd.kind === "soldOut" ? (
+              t.outOfStock
+            ) : (
+              t.addToCart
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -59,10 +59,12 @@ export async function POST(request: Request) {
   await abandonOpenCheckouts(session.user.id);
 
   // Never trust client-supplied prices — resolve every line back to its
-  // real variant and read price/stock straight from the database.
+  // real variant and read price/stock straight from the database. A line
+  // must name exactly one variant: without a size/color that narrows it
+  // down, the lookup would otherwise ship whichever size it happened to find.
   const resolved = await Promise.all(
     items.map(async (item) => {
-      const variant = await prisma.productVariant.findFirst({
+      const matches = await prisma.productVariant.findMany({
         where: {
           size: item.size ?? undefined,
           color: item.color ?? undefined,
@@ -76,8 +78,9 @@ export async function POST(request: Request) {
             },
           },
         },
+        take: 2,
       });
-      return { item, variant };
+      return { item, variant: matches.length === 1 ? matches[0] : null };
     }),
   );
 

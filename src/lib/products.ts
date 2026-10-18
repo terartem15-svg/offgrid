@@ -31,6 +31,15 @@ export type ProductListItem = {
   isFeatured: boolean;
   /** Summed stock across all variants — cards only show the "only N left" label when this is above zero. */
   stock: number;
+  /** Every size/color the product comes in, sizes in display order — the card's quick add picks from these. */
+  options: ProductOption[];
+};
+
+export type ProductOption = {
+  size: string;
+  color: string;
+  price: number; // EUR, whole units
+  stock: number;
 };
 
 export type ProductVariantView = {
@@ -140,7 +149,7 @@ const LIST_INCLUDE = {
   brand: { select: { name: true, slug: true } },
   category: { select: { slug: true } },
   images: { orderBy: { position: "asc" as const }, take: 4 },
-  variants: { select: { priceOverride: true, stock: true } },
+  variants: { select: { size: true, color: true, priceOverride: true, stock: true } },
 } satisfies Prisma.ProductInclude;
 
 type ProductForList = Prisma.ProductGetPayload<{ include: typeof LIST_INCLUDE }>;
@@ -148,6 +157,7 @@ type ProductForList = Prisma.ProductGetPayload<{ include: typeof LIST_INCLUDE }>
 function toListItem(product: ProductForList): ProductListItem {
   const prices = product.variants.map((v) => v.priceOverride ?? product.basePrice);
   const price = prices.length ? Math.min(...prices) : product.basePrice;
+  const sizeRank = new Map(sortSizes([...new Set(product.variants.map((v) => v.size))]).map((s, i) => [s, i]));
 
   return {
     slug: product.slug,
@@ -162,6 +172,14 @@ function toListItem(product: ProductForList): ProductListItem {
     galleryImages: product.images.map((img) => img.url),
     stock: product.variants.reduce((sum, v) => sum + v.stock, 0),
     isFeatured: product.isFeatured,
+    options: [...product.variants]
+      .sort((a, b) => sizeRank.get(a.size)! - sizeRank.get(b.size)!)
+      .map((v) => ({
+        size: v.size,
+        color: v.color,
+        price: toEuros(v.priceOverride ?? product.basePrice),
+        stock: v.stock,
+      })),
   };
 }
 
@@ -340,6 +358,17 @@ export const getProductBySlug = cache(async (slug: string): Promise<ProductDetai
   const colorNames = [...new Set(product.variants.map((v) => v.color))];
   const prices = product.variants.map((v) => v.priceOverride ?? product.basePrice);
   const price = prices.length ? Math.min(...prices) : product.basePrice;
+  const sizes = sortSizes([...new Set(product.variants.map((v) => v.size))]);
+  const variants = product.variants
+    .map((v) => ({
+      id: v.id,
+      sku: v.sku,
+      size: v.size,
+      color: v.color,
+      price: toEuros(v.priceOverride ?? product.basePrice),
+      stock: v.stock,
+    }))
+    .sort((a, b) => sizes.indexOf(a.size) - sizes.indexOf(b.size));
 
   return {
     slug: product.slug,
@@ -354,18 +383,12 @@ export const getProductBySlug = cache(async (slug: string): Promise<ProductDetai
     galleryImages: product.images.map((i) => i.url),
     stock: product.variants.reduce((sum, v) => sum + v.stock, 0),
     isFeatured: product.isFeatured,
+    options: variants.map(({ size, color, price, stock }) => ({ size, color, price, stock })),
     description: product.description,
     images: product.images.map((i) => ({ url: i.url, color: i.color })),
     colors: colorNames.map((name) => ({ name, hex: colorToHex(name) })),
-    sizes: sortSizes([...new Set(product.variants.map((v) => v.size))]),
-    variants: product.variants.map((v) => ({
-      id: v.id,
-      sku: v.sku,
-      size: v.size,
-      color: v.color,
-      price: toEuros(v.priceOverride ?? product.basePrice),
-      stock: v.stock,
-    })),
+    sizes,
+    variants,
   };
 });
 
