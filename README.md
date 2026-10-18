@@ -13,6 +13,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 ![Stripe](https://img.shields.io/badge/Stripe-Checkout-635BFF?logo=stripe&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss&logoColor=white)
+[![CI](https://github.com/terartem15-svg/offgrid12/actions/workflows/ci.yml/badge.svg)](https://github.com/terartem15-svg/offgrid12/actions/workflows/ci.yml)
 
 </div>
 
@@ -21,6 +22,7 @@
 ## Contents
 
 - [About](#about)
+- [Screenshots](#screenshots)
 - [Features](#features)
 - [Tech stack](#tech-stack)
 - [Engineering highlights](#engineering-highlights)
@@ -31,6 +33,7 @@
 - [Testing and quality](#testing-and-quality)
 - [Deployment](#deployment)
 - [Notes](#notes)
+- [License](#license)
 
 ## About
 
@@ -44,6 +47,14 @@ charged.
 
 **Try it:** [live demo](https://offgrid-wheat.vercel.app) · pay with the Stripe test card `4242 4242 4242 4242`
 (any future expiry date, any CVC).
+
+## Screenshots
+
+![Home page](docs/screenshots/home.jpg)
+
+| Catalog with filters | Mobile |
+| --- | --- |
+| ![Catalog filtered to sneakers](docs/screenshots/catalog.jpg) | <img src="docs/screenshots/mobile.jpg" alt="Home page on a phone" width="260"> |
 
 ## Features
 
@@ -60,11 +71,13 @@ charged.
 - **Product page** with a color-aware gallery (photos follow the selected colorway), per-color stock (sold-out
   sizes are disabled, sold-out colors are dimmed), a copyable SKU, sale pricing, an animated info modal for
   shipping / returns / payment, and related products streamed in behind a Suspense boundary.
-- **Product cards** with a hover photo carousel, a discount badge, a wishlist heart and an occasional
-  "only N left" hint.
+- **Product cards** with a hover photo carousel, a discount badge, a wishlist heart, an occasional
+  "only N left" hint and a quick add that asks for the size (products with several colorways open their page
+  instead), so a card never puts an unspecified size in the cart.
 - **Cart drawer** with a free-shipping progress bar (free above €150, flat €9.99 below).
 - **Wishlist drawer.** Cart and wishlist are persisted in the browser (Zustand) and are kept **separately per
-  signed-in user**, so switching accounts never leaks one person's items into another's.
+  signed-in user**, so switching accounts never leaks one person's items into another's. What a guest collected
+  is carried into the account on sign-in, so checkout's "sign in first" step doesn't empty the cart.
 - **Three languages** — English, Romanian and Russian — with a region / language switcher.
 - **About** and **Contact** pages.
 
@@ -94,7 +107,8 @@ charged.
 ### Admin panel (`/admin`)
 
 - **Dashboard** with counters for products, orders, pending orders, paid revenue and low-stock variants.
-- **Products:** list, create and edit with variants (size / color / stock / price override) and image URLs.
+- **Products:** list, create and edit with gender, an optional old (sale) price, variants (size / color / stock /
+  price override) and image URLs.
 - **Orders:** card and guest orders, status management, and real **Stripe refunds** with automatic restocking.
 
 ## Tech stack
@@ -229,6 +243,7 @@ Open <http://localhost:3000>.
 | `npm run build` | Generate the Prisma client and build for production. |
 | `npm start` | Serve the production build. |
 | `npm run lint` | Run ESLint through `next lint`. |
+| `npm test` | Run the unit tests (Node's built-in test runner). |
 | `npm run db:up` / `db:down` | Start / stop the local PostgreSQL container. |
 | `npm run db:migrate` | Create and apply a development migration (`prisma migrate dev`). |
 | `npm run db:seed` | Wipe and reseed the demo data. |
@@ -261,8 +276,10 @@ offgrid/
 │   ├── store/                 # Zustand stores: cart, wishlist, region
 │   └── auth.ts                # Auth.js configuration
 ├── .e2e/                      # local Stripe payment test harness
+├── .github/workflows/ci.yml   # type check, lint and unit tests
+├── docs/screenshots/          # images used in this README
 ├── docker-compose.yml         # local PostgreSQL
-└── vercel.json                # cron schedule
+└── vercel.json                # build command (runs migrations) and cron schedule
 ```
 
 ## Testing and quality
@@ -270,7 +287,13 @@ offgrid/
 ```bash
 npx tsc --noEmit      # type-check the whole project
 npm run lint          # ESLint
+npm test              # unit tests
 ```
+
+**Unit tests** (`src/**/*.test.ts`) cover the pure helpers that guard against bad input: the same-origin check
+for `callbackUrl` after sign-in, parsing of untrusted catalog query parameters, and price formatting. They run on
+Node's built-in test runner through `tsx`, without a database. GitHub Actions runs the type check, lint and unit
+tests on every push and pull request ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 **Payment end-to-end test.** `.e2e/` contains a throwaway harness that drives a real browser through Stripe's
 hosted test-mode Checkout against a temporary embedded PostgreSQL, with webhooks forwarded by the Stripe CLI. It
@@ -284,8 +307,9 @@ The app is built for [Vercel](https://vercel.com/):
 
 1. **Database.** Create a PostgreSQL database (for example on Supabase). Use the *pooled* connection string as
    `DATABASE_URL` (with `?pgbouncer=true`) and the *direct* one as `DIRECT_URL`.
-2. **Migrations.** `npm run build` only generates the client, so apply the schema yourself once and after every
-   schema change: `npx prisma migrate deploy` with the production URLs in your environment.
+2. **Migrations.** The Vercel build (`buildCommand` in `vercel.json`) runs `prisma migrate deploy` before
+   `next build`, so every deploy applies pending migrations through `DIRECT_URL` first. A failed migration fails
+   the build, and the previous deployment keeps serving. Locally, `npm run build` only generates the client.
 3. **Environment.** Set every variable from the table above in the Vercel project. Keep Stripe in **test mode**
    for a public demo.
 4. **Stripe webhook.** Add `https://<your-domain>/api/webhooks/stripe` as an endpoint in the Stripe Dashboard with
@@ -297,6 +321,11 @@ The app is built for [Vercel](https://vercel.com/):
 
 ## Notes
 
-- Product photos are hot-linked from [Unsplash](https://unsplash.com/) and the copy is placeholder text.
+- Product photos are hot-linked from [Unsplash](https://unsplash.com/) and the copy is placeholder text. The
+  photos are stand-ins from a small shared pool, so they don't show the exact model in a product's name.
 - The region switcher changes the **language** only; prices are always shown and charged in EUR.
 - This is a portfolio project, not a production store.
+
+## License
+
+The code is released under the [MIT License](LICENSE). Brand names in the demo catalog belong to their owners.
