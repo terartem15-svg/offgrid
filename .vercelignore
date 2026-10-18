@@ -1,0 +1,14 @@
+# Files `vercel deploy` must not upload (Vercel already skips node_modules,
+# .next, .vercel and .env*.local on its own).
+
+# Secrets: every env file except the committed template. On Vercel the
+# variables come from Project Settings → Environment Variables.
+.env*
+!.env.example
+
+# Local test tooling and build leftovers
+.e2e/shots
+.e2e/node_modules
+.e2e/pgdata
+.tmp
+tsconfig.tsbuildinfo
