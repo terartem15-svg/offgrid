@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -91,8 +91,17 @@ export function FilterSidebar({ options }: FilterSidebarProps) {
   const activeBrands = searchParams.getAll("brand");
   const activeSizes = searchParams.getAll("size");
   const activeColors = searchParams.getAll("color");
-  const [priceMin, setPriceMin] = useState(searchParams.get("priceMin") ?? "");
-  const [priceMax, setPriceMax] = useState(searchParams.get("priceMax") ?? "");
+  const urlPriceMin = searchParams.get("priceMin") ?? "";
+  const urlPriceMax = searchParams.get("priceMax") ?? "";
+  const [priceMin, setPriceMin] = useState(urlPriceMin);
+  const [priceMax, setPriceMax] = useState(urlPriceMax);
+
+  // The sidebar stays mounted when a header/menu link changes the query, so the
+  // price inputs follow the URL instead of keeping a range that no longer applies.
+  useEffect(() => {
+    setPriceMin(urlPriceMin);
+    setPriceMax(urlPriceMax);
+  }, [urlPriceMin, urlPriceMax]);
 
   const pushParams = (mutate: (params: URLSearchParams) => void) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -145,8 +154,8 @@ export function FilterSidebar({ options }: FilterSidebarProps) {
     activeBrands.length > 0 ||
     activeSizes.length > 0 ||
     activeColors.length > 0 ||
-    priceMin ||
-    priceMax;
+    urlPriceMin !== "" ||
+    urlPriceMax !== "";
 
   const clearAll = () => {
     setPriceMin("");
