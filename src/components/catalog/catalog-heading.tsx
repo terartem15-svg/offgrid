@@ -1,10 +1,10 @@
 "use client";
 
-import { useTranslations } from "@/lib/i18n";
+import { categoryLabel, useTranslations } from "@/lib/i18n";
 
 type CatalogHeadingProps = {
-  /** Real category display name from the DB, or null on the "all/featured" views. */
-  categoryName: string | null;
+  /** The selected category (slug + DB name), or null on the "all/featured" views. */
+  category: { slug: string; name: string } | null;
   featured: boolean;
   /** Raw `gender` query params ("men" | "women" | "unisex"), empty when browsing unfiltered. */
   genders: string[];
@@ -18,7 +18,7 @@ type CatalogHeadingProps = {
  * carries the bits of copy that depend on the selected language.
  */
 export function CatalogHeading({
-  categoryName,
+  category,
   featured,
   genders,
   sort,
@@ -31,6 +31,9 @@ export function CatalogHeading({
       .filter((gender) => gender in t.megaMenu.genders)
       .map((gender) => t.megaMenu.genders[gender as keyof typeof t.megaMenu.genders])
       .join(" / ") || null;
+
+  // Category names in the DB are English — the heading shows the translated one.
+  const categoryName = category ? categoryLabel(category.slug, category.name, t) : null;
 
   const heading = sale
     ? t.catalog.sale

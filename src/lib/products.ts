@@ -471,7 +471,8 @@ export async function getFilterOptions(): Promise<FilterOptions> {
 
 export async function getCatalogProducts(filters: CatalogFilters): Promise<{
   items: ProductListItem[];
-  categoryName: string | null;
+  /** The selected category when exactly one is chosen — the heading names it. */
+  category: { slug: string; name: string } | null;
   /** Total matches across all pages (before slicing to the current page). */
   total: number;
   pageCount: number;
@@ -483,7 +484,11 @@ export async function getCatalogProducts(filters: CatalogFilters): Promise<{
     where.gender = { in: filters.gender };
   }
   if (filters.category?.length) {
-    where.category = { slug: { in: filters.category } };
+    // Products sit in leaf categories, so a top-level one (Shoes, Accessories —
+    // the footer links one) matches the products of its subcategories too.
+    where.category = {
+      OR: [{ slug: { in: filters.category } }, { parent: { slug: { in: filters.category } } }],
+    };
   }
   if (filters.brand?.length) {
     where.brand = { slug: { in: filters.brand } };
@@ -548,7 +553,7 @@ export async function getCatalogProducts(filters: CatalogFilters): Promise<{
 
   return {
     items: items.slice(start, start + PRODUCTS_PER_PAGE),
-    categoryName: category?.name ?? null,
+    category: category ? { slug: category.slug, name: category.name } : null,
     total,
     pageCount,
     page,

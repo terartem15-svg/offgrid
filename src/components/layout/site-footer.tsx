@@ -12,7 +12,7 @@ const FOOTER_COLUMNS = [
     links: [
       { key: "allProducts", href: "/catalog" },
       { key: "hoodies", href: "/catalog?category=hoodies" },
-      { key: "tshirts", href: "/catalog?category=t-shirts" },
+      { key: "tshirts", href: "/catalog?category=tshirts" },
       { key: "pants", href: "/catalog?category=pants" },
       { key: "jackets", href: "/catalog?category=jackets" },
       { key: "accessories", href: "/catalog?category=accessories" },

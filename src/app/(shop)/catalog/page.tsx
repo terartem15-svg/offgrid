@@ -67,7 +67,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     page: parsePage(params.page),
   };
 
-  const [{ items, categoryName, total, pageCount, page: currentPage }, options] = await Promise.all([
+  const [{ items, category, total, pageCount, page: currentPage }, options] = await Promise.all([
     getCatalogProducts(filters),
     getFilterOptions(),
   ]);
@@ -75,7 +75,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
       <CatalogHeading
-        categoryName={categoryName}
+        category={category}
         featured={filters.featured}
         genders={genderParams}
         sort={filters.sort ?? null}
