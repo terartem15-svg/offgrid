@@ -15,167 +15,213 @@ const ONE_SIZE = ["One Size"];
 const STOCK_BY_INDEX = [12, 6, 15, 4, 9, 7, 3, 11];
 const stockFor = (i: number) => STOCK_BY_INDEX[i % STOCK_BY_INDEX.length];
 
-/** Unsplash CDN helper — swap these for real product photography later. */
-const img = (id: string) =>
+/** Product photos are hot-linked from the Unsplash and Pexels CDNs, both free to use. */
+const unsplash = (id: string) =>
   `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1200&q=80`;
+const pexels = (id: number) =>
+  `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=1200`;
 
 /**
- * Unsplash photo ids per leaf category, each checked by eye, so a category page shows
- * that kind of item (sandals under Sandals, watches under Watches). The n-th product of a
- * category takes the n-th photo and the next one as its hover shot.
+ * Main and hover photo of every curated product, each checked by eye: the model itself where a
+ * free photo of it exists, otherwise the same kind of item without another brand's logo on it.
  */
-const IMG_IDS_BY_CATEGORY: Record<string, string[]> = {
-  tshirts: [
-    "1521572163474-6864f9cf17ab", "1503341504253-dff4815485f1", "1583743814966-8936f5b7be1a", "1576566588028-4147f3842f27",
-    "1622445275463-afa2ab738c34", "1618354691373-d851c5c3a990", "1620799139507-2a76f79a2f4d", "1576871337622-98d48d1cf531",
-    "1622519407650-3df9883f76a5", "1564859228273-274232fdb516",
-  ],
-  shirts: [
-    "1596755094514-f87e34085b2c", "1602810318383-e386cc2a3ccf", "1598033129183-c4f50c736f10", "1603252109303-2751441dd157",
-    "1523381210434-271e8be1f52b", "1611312449412-6cefac5dc3e4", "1594938291221-94f18cbb5660", "1603252109612-24fa03d145c8",
-    "1588359348347-9bc6cbbb689e",
-  ],
-  hoodies: [
-    "1556821840-3a63f95609a7", "1509942774463-acf339cf87d5", "1620799140188-3b2a02fd9a77", "1572495641004-28421ae52e52",
-    "1579572331145-5e53b299c64e", "1542406775-ade58c52d2e4", "1564557287817-3785e38ec1f5", "1513789181297-6f2ec112c0bc",
-    "1614975059251-992f11792b9f", "1620799140408-edc6dcb6d633",
-  ],
-  sweaters: [
-    "1624623278313-a930126a11c3", "1574201635302-388dd92a4c3f", "1580331451062-99ff652288d7", "1434389677669-e08b4cac3105",
-    "1578587018452-892bacefd3f2",
-  ],
-  jackets: [
-    "1591047139829-d91aecb6caea", "1551028719-00167b16eac5", "1544022613-e87ca75a784a", "1548883354-94bcfe321cbb",
-    "1611312449408-fcece27cdbb7", "1544923246-77307dd654cb", "1520975954732-35dd22299614", "1495105787522-5334e3ffa0ef",
-    "1543076447-215ad9ba6923", "1617114919297-3c8ddb01f599", "1520367745676-56196632073f", "1487222477894-8943e31ef7b2",
-  ],
-  coats: [
-    "1539533018447-63fcce2678e3", "1548624313-0396c75e4b1a", "1608063615781-e2ef8c73d114", "1559551409-dadc959f76b8",
-    "1604644401890-0bd678c83788", "1485968579580-b6d095142e6e",
-  ],
-  jeans: [
-    "1542272604-787c3835535d", "1541099649105-f69ad21f3246", "1604176354204-9268737828e4", "1582552938357-32b906df40cb",
-    "1565084888279-aca607ecce0c", "1560243563-062bfc001d68", "1600717535275-0b18ede2f7fc", "1584370848010-d7fe6bc767ec",
-    "1605518216938-7c31b7b14ad0",
-  ],
-  pants: [
-    "1624378439575-d8705ad7ae80", "1473966968600-fa801b869a1a", "1594633312681-425c7b97ccd1", "1509631179647-0177331693ae",
-  ],
-  shorts: [
-    "1591195853828-11db59a44f6b", "1617952236317-0bd127407984", "1598522325074-042db73aa4e6",
-  ],
-  "dresses-skirts": [
-    "1595777457583-95e059d581b8", "1572804013309-59a88b7e92f1", "1515372039744-b8f02a3ae446", "1583496661160-fb5886a0aaaa",
-    "1478146896981-b80fe463b330", "1591369822096-ffd140ec948f", "1608234807905-4466023792f5", "1582142306909-195724d33ffc",
-    "1605763240000-7e93b172d754",
-  ],
-  sneakers: [
-    "1542291026-7eec264c27ff", "1600185365483-26d7a4cc7519", "1606107557195-0e29a4b5b4aa", "1552346154-21d32810aba3",
-    "1460353581641-37baddab0fa2", "1491553895911-0055eca6402d", "1543508282-6319a3e2621f", "1600185365926-3a2ce3cdb9eb",
-    "1597045566677-8cf032ed6634", "1605348532760-6753d2c43329", "1603808033192-082d6919d3e1", "1570464197285-9949814674a7",
-    "1549298916-b41d501d3772", "1584735175315-9d5df23860e6", "1608667508764-33cf0726b13a",
-  ],
-  "canvas-shoes": [
-    "1607522370275-f14206abe5d3", "1494496195158-c3becb4f2475", "1463100099107-aa0980c362e6", "1525966222134-fcfa99b8ae77",
-    "1617606002806-94e279c22567", "1542280756-74b2f55e73ab", "1556048219-bb6978360b84",
-  ],
-  boots: [
-    "1608256246200-53e635b5b65f", "1605812860427-4024433a70fd", "1531310197839-ccf54634509e", "1520639888713-7851133b1ed0",
-    "1605733160314-4fc7dac4bb16",
-  ],
-  "dress-shoes": [
-    "1614252235316-8c857d38b5f4", "1614253429340-98120bd6d753", "1533867617858-e7b97e060509", "1449505278894-297fdb3edbc1",
-    "1560343090-f0409e92791a",
-  ],
-  sandals: [
-    "1603487742131-4160ec999306", "1562273138-f46be4ebdf33", "1622920799137-86c891159e44", "1613987876445-fcb353cd8e27",
-  ],
-  bags: [
-    "1548036328-c9fa89d128fa", "1584917865442-de89df76afd3", "1590874103328-eac38a683ce7", "1566150905458-1bf1fc113f0d",
-    "1594223274512-ad4803739b7c", "1611923134239-b9be5816e23c", "1559563458-527698bf5295", "1612902456551-333ac5afa26e",
-  ],
-  backpacks: [
-    "1553062407-98eeb64c6a62", "1622560480605-d83c853bc5c3", "1581605405669-fcdf81165afa", "1546938576-6e6a64f317cc",
-    "1577733966973-d680bffd2e80", "1491637639811-60e2756cc1c7", "1585916420730-d7f95e942d43", "1575844264771-892081089af5",
-    "1611010344444-5f9e4d86a6e1",
-  ],
-  belts: [
-    "1624222247344-550fb60583dc", "1664286074176-5206ee5dc878",
-  ],
-  wallets: [
-    "1627123424574-724758594e93", "1606503825008-909a67e63c3d", "1517254797898-04edd251bfb3",
-  ],
-  sunglasses: [
-    "1572635196237-14b3f281503f", "1511499767150-a48a237f0083", "1577803645773-f96470509666", "1473496169904-658ba7c44d8a",
-    "1508296695146-257a814070b4", "1556306535-38febf6782e7",
-  ],
-  headwear: [
-    "1576871337632-b9aef4c17ab9", "1556306535-0f09a537f0a3", "1588850561407-ed78c282e89b", "1521369909029-2afed882baee",
-    "1534215754734-18e55d13e346", "1529958030586-3aae4ca485ff", "1578681994506-b8f463449011",
-  ],
-  watches: [
-    "1523275335684-37898b6baf30", "1524592094714-0f0654e20314", "1434056886845-dac89ffe9b56", "1522312346375-d1a52e2b99b3",
-    "1542496658-e33a6d0d50f6",
-  ],
-  jewelry: [
-    "1611591437281-460bfbe1220a", "1599643478518-a784e5dc4c8f", "1515562141207-7a88fb7ce338", "1535632066927-ab7c9ab60908",
-    "1605100804763-247f67b3557e", "1602173574767-37ac01994b2a", "1617038220319-276d3cfab638", "1590548784585-643d2b9f2925",
-  ],
+const CURATED_PHOTOS: Record<string, [string, string]> = {
+  "nike-air-force-1-07": [unsplash("1600269452121-4f2416e55c28"), unsplash("1570464197285-9949814674a7")],
+  "nike-dunk-low-retro": [unsplash("1606890658317-7d14490b76fd"), unsplash("1584735175315-9d5df23860e6")],
+  "adidas-samba-og": [pexels(19737599), pexels(19737600)],
+  "new-balance-550": [unsplash("1539185441755-769473a23570"), unsplash("1603808033192-082d6919d3e1")],
+  "balenciaga-triple-s": [unsplash("1560769629-975ec94e6a86"), unsplash("1595341888016-a392ef81b7de")],
+  "puma-suede-classic-xxi": [unsplash("1608231387042-66d1773070a5"), unsplash("1608667508764-33cf0726b13a")],
+  "adidas-gazelle": [pexels(20082767), pexels(19737597)],
+  "nike-air-force-1-shadow": [unsplash("1595950653106-6c9ebd614d3a"), unsplash("1600269452121-4f2416e55c28")],
+  "calvin-klein-canvas-low-top": [pexels(4296075), unsplash("1542280756-74b2f55e73ab")],
+  "lacoste-gazon-canvas-sneaker": [pexels(35618111), pexels(4296075)],
+  "carhartt-wip-michigan-boot": [unsplash("1605812860427-4024433a70fd"), unsplash("1520639888713-7851133b1ed0")],
+  "the-north-face-chilkat-boot": [pexels(7087303), unsplash("1608256246200-53e635b5b65f")],
+  "the-north-face-shellista-boot": [pexels(15878515), unsplash("1605733160314-4fc7dac4bb16")],
+  "ralph-lauren-leather-derby": [unsplash("1449505278894-297fdb3edbc1"), unsplash("1614252235316-8c857d38b5f4")],
+  "gucci-horsebit-loafer": [pexels(267320), pexels(35070982)],
+  "prada-sport-slide-sandal": [pexels(18186215), pexels(13966800)],
+  "dior-leather-slide": [unsplash("1603487742131-4160ec999306"), pexels(27204297)],
+  "off-white-diag-arrows-hoodie": [unsplash("1513789181297-6f2ec112c0bc"), unsplash("1579572331145-5e53b299c64e")],
+  "balenciaga-logo-oversized-hoodie": [unsplash("1579572331145-5e53b299c64e"), unsplash("1542406775-ade58c52d2e4")],
+  "stone-island-garment-dyed-hoodie": [unsplash("1556821840-3a63f95609a7"), unsplash("1564557287817-3785e38ec1f5")],
+  "stone-island-crinkle-reps-jacket": [unsplash("1544022613-e87ca75a784a"), unsplash("1548883354-94bcfe321cbb")],
+  "the-north-face-nuptse-jacket": [unsplash("1548624313-0396c75e4b1a"), pexels(35862260)],
+  "carhartt-wip-detroit-jacket": [unsplash("1611312449408-fcece27cdbb7"), unsplash("1543076447-215ad9ba6923")],
+  "moncler-maya-coat": [pexels(35243642), unsplash("1548624313-0396c75e4b1a")],
+  "louis-vuitton-wool-trench": [unsplash("1539533018447-63fcce2678e3"), pexels(19192235)],
+  "levis-501-original-jeans": [unsplash("1605518216938-7c31b7b14ad0"), unsplash("1542272604-787c3835535d")],
+  "diesel-slim-jeans": [unsplash("1541099649105-f69ad21f3246"), unsplash("1604176354204-9268737828e4")],
+  "tommy-hilfiger-tailored-chinos": [unsplash("1473966968600-fa801b869a1a"), unsplash("1624378439575-d8705ad7ae80")],
+  "lacoste-pleated-shorts": [unsplash("1598522325074-042db73aa4e6"), unsplash("1617952236317-0bd127407984")],
+  "ralph-lauren-oxford-shirt": [unsplash("1594938291221-94f18cbb5660"), unsplash("1598033129183-c4f50c736f10")],
+  "calvin-klein-logo-t-shirt": [unsplash("1521572163474-6864f9cf17ab"), unsplash("1620799139507-2a76f79a2f4d")],
+  "calvin-klein-crewneck-sweater": [unsplash("1578587018452-892bacefd3f2"), unsplash("1574201635302-388dd92a4c3f")],
+  "dior-midi-dress": [unsplash("1605763240000-7e93b172d754"), unsplash("1595777457583-95e059d581b8")],
+  "louis-vuitton-keepall-bag": [pexels(9582656), pexels(27793087)],
+  "gucci-dionysus-bag": [unsplash("1548036328-c9fa89d128fa"), unsplash("1611923134239-b9be5816e23c")],
+  "the-north-face-borealis-backpack": [unsplash("1585916420730-d7f95e942d43"), unsplash("1577733966973-d680bffd2e80")],
+  "gucci-gg-leather-belt": [unsplash("1624222247344-550fb60583dc"), pexels(31959216)],
+  "prada-saffiano-wallet": [unsplash("1606503825008-909a67e63c3d"), unsplash("1627123424574-724758594e93")],
+  "dior-aviator-sunglasses": [pexels(29332838), pexels(32677214)],
+  "prada-cat-eye-sunglasses": [unsplash("1508296695146-257a814070b4"), unsplash("1577803645773-f96470509666")],
+  "new-era-9fifty-cap": [unsplash("1534215754734-18e55d13e346"), unsplash("1521369909029-2afed882baee")],
+  "lacoste-bucket-hat": [unsplash("1578681994506-b8f463449011"), pexels(6962046)],
+  "calvin-klein-minimalist-watch": [unsplash("1524592094714-0f0654e20314"), unsplash("1434056886845-dac89ffe9b56")],
+  "dior-crystal-necklace": [unsplash("1599643478518-a784e5dc4c8f"), unsplash("1515562141207-7a88fb7ce338")],
 };
 
-/** Curated products get photos of their model where Unsplash has one, else the closest match. */
-const CURATED_IMG_IDS: Record<string, [string, string]> = {
-  "nike-air-force-1-07": ["1600269452121-4f2416e55c28", "1603808033192-082d6919d3e1"],
-  "nike-dunk-low-retro": ["1606890658317-7d14490b76fd", "1584735175315-9d5df23860e6"],
-  "adidas-samba-og": ["1520256862855-398228c41684", "1491553895911-0055eca6402d"],
-  "new-balance-550": ["1539185441755-769473a23570", "1608231387042-66d1773070a5"],
-  "balenciaga-triple-s": ["1560769629-975ec94e6a86", "1608667508764-33cf0726b13a"],
-  "puma-suede-classic-xxi": ["1608231387042-66d1773070a5", "1608667508764-33cf0726b13a"],
-  "adidas-gazelle": ["1595341888016-a392ef81b7de", "1520256862855-398228c41684"],
-  "nike-air-force-1-shadow": ["1595950653106-6c9ebd614d3a", "1600269452121-4f2416e55c28"],
-  "calvin-klein-canvas-low-top": ["1542280756-74b2f55e73ab", "1494496195158-c3becb4f2475"],
-  "lacoste-gazon-canvas-sneaker": ["1525966222134-fcfa99b8ae77", "1463100099107-aa0980c362e6"],
-  "carhartt-wip-michigan-boot": ["1605812860427-4024433a70fd", "1520639888713-7851133b1ed0"],
-  "the-north-face-chilkat-boot": ["1608256246200-53e635b5b65f", "1531310197839-ccf54634509e"],
-  "the-north-face-shellista-boot": ["1605733160314-4fc7dac4bb16", "1608256246200-53e635b5b65f"],
-  "ralph-lauren-leather-derby": ["1449505278894-297fdb3edbc1", "1614252235316-8c857d38b5f4"],
-  "gucci-horsebit-loafer": ["1614253429340-98120bd6d753", "1533867617858-e7b97e060509"],
-  "prada-sport-slide-sandal": ["1622920799137-86c891159e44", "1603487742131-4160ec999306"],
-  "dior-leather-slide": ["1603487742131-4160ec999306", "1562273138-f46be4ebdf33"],
-  "off-white-diag-arrows-hoodie": ["1513789181297-6f2ec112c0bc", "1579572331145-5e53b299c64e"],
-  "balenciaga-logo-oversized-hoodie": ["1579572331145-5e53b299c64e", "1556821840-3a63f95609a7"],
-  "stone-island-garment-dyed-hoodie": ["1572495641004-28421ae52e52", "1556821840-3a63f95609a7"],
-  "stone-island-crinkle-reps-jacket": ["1548883354-94bcfe321cbb", "1544022613-e87ca75a784a"],
-  "the-north-face-nuptse-jacket": ["1548624313-0396c75e4b1a", "1548883354-94bcfe321cbb"],
-  "carhartt-wip-detroit-jacket": ["1611312449408-fcece27cdbb7", "1543076447-215ad9ba6923"],
-  "moncler-maya-coat": ["1548624313-0396c75e4b1a", "1604644401890-0bd678c83788"],
-  "louis-vuitton-wool-trench": ["1539533018447-63fcce2678e3", "1485968579580-b6d095142e6e"],
-  "levis-501-original-jeans": ["1605518216938-7c31b7b14ad0", "1542272604-787c3835535d"],
-  "diesel-slim-jeans": ["1604176354204-9268737828e4", "1565084888279-aca607ecce0c"],
-  "tommy-hilfiger-tailored-chinos": ["1473966968600-fa801b869a1a", "1624378439575-d8705ad7ae80"],
-  "lacoste-pleated-shorts": ["1617952236317-0bd127407984", "1591195853828-11db59a44f6b"],
-  "ralph-lauren-oxford-shirt": ["1594938291221-94f18cbb5660", "1602810318383-e386cc2a3ccf"],
-  "calvin-klein-logo-t-shirt": ["1521572163474-6864f9cf17ab", "1620799139507-2a76f79a2f4d"],
-  "calvin-klein-crewneck-sweater": ["1574201635302-388dd92a4c3f", "1624623278313-a930126a11c3"],
-  "dior-midi-dress": ["1591369822096-ffd140ec948f", "1572804013309-59a88b7e92f1"],
-  "louis-vuitton-keepall-bag": ["1612902456551-333ac5afa26e", "1594223274512-ad4803739b7c"],
-  "gucci-dionysus-bag": ["1548036328-c9fa89d128fa", "1611923134239-b9be5816e23c"],
-  "the-north-face-borealis-backpack": ["1585916420730-d7f95e942d43", "1581605405669-fcdf81165afa"],
-  "gucci-gg-leather-belt": ["1624222247344-550fb60583dc", "1664286074176-5206ee5dc878"],
-  "prada-saffiano-wallet": ["1606503825008-909a67e63c3d", "1627123424574-724758594e93"],
-  "dior-aviator-sunglasses": ["1511499767150-a48a237f0083", "1577803645773-f96470509666"],
-  "prada-cat-eye-sunglasses": ["1508296695146-257a814070b4", "1572635196237-14b3f281503f"],
-  "new-era-9fifty-cap": ["1556306535-0f09a537f0a3", "1521369909029-2afed882baee"],
-  "lacoste-bucket-hat": ["1578681994506-b8f463449011", "1588850561407-ed78c282e89b"],
-  "calvin-klein-minimalist-watch": ["1524592094714-0f0654e20314", "1434056886845-dac89ffe9b56"],
-  "dior-crystal-necklace": ["1599643478518-a784e5dc4c8f", "1515562141207-7a88fb7ce338"],
+/**
+ * Main and hover photo per filler product type (`FILLER_NAMES` below), each checked by eye so the
+ * photo shows that kind of item: a "Penny Loafer" a penny loafer, a "Beanie" a beanie. Every type
+ * occurs in one category only, so it also identifies a single filler product.
+ */
+const FILLER_PHOTOS: Record<string, [string, string]> = {
+  // tshirts
+  "Essential Logo Tee": [unsplash("1583743814966-8936f5b7be1a"), unsplash("1618354691373-d851c5c3a990")],
+  "Classic Crewneck Tee": [unsplash("1622445275463-afa2ab738c34"), unsplash("1521572163474-6864f9cf17ab")],
+  "Graphic Print Tee": [unsplash("1576566588028-4147f3842f27"), unsplash("1503341504253-dff4815485f1")],
+  "Ringer Tee": [unsplash("1622519407650-3df9883f76a5"), unsplash("1576871337622-98d48d1cf531")],
+  "Pocket Tee": [unsplash("1618354691373-d851c5c3a990"), unsplash("1564859228273-274232fdb516")],
+  // shirts
+  "Oxford Button-Down": [unsplash("1588359348347-9bc6cbbb689e"), unsplash("1602810318383-e386cc2a3ccf")],
+  "Flannel Check Shirt": [unsplash("1611312449412-6cefac5dc3e4"), unsplash("1602810318383-e386cc2a3ccf")],
+  "Linen Resort Shirt": [unsplash("1523381210434-271e8be1f52b"), unsplash("1603252109303-2751441dd157")],
+  "Denim Western Shirt": [unsplash("1596755094514-f87e34085b2c"), unsplash("1602810318383-e386cc2a3ccf")],
+  "Poplin Shirt": [unsplash("1603252109612-24fa03d145c8"), unsplash("1603252109303-2751441dd157")],
+  // hoodies
+  "Pullover Hoodie": [unsplash("1564557287817-3785e38ec1f5"), unsplash("1620799140188-3b2a02fd9a77")],
+  "Zip-Up Hoodie": [pexels(26592662), pexels(5978624)],
+  "Fleece Crewneck Sweatshirt": [unsplash("1614975059251-992f11792b9f"), unsplash("1620799140408-edc6dcb6d633")],
+  "Logo Hoodie": [unsplash("1542406775-ade58c52d2e4"), unsplash("1509942774463-acf339cf87d5")],
+  "Oversized Hoodie": [unsplash("1572495641004-28421ae52e52"), unsplash("1620799140188-3b2a02fd9a77")],
+  // sweaters
+  "Merino Crewneck Sweater": [unsplash("1574201635302-388dd92a4c3f"), unsplash("1624623278313-a930126a11c3")],
+  "Cable-Knit Sweater": [unsplash("1580331451062-99ff652288d7"), unsplash("1624623278313-a930126a11c3")],
+  "Half-Zip Sweater": [pexels(36510849), pexels(19915622)],
+  "Turtleneck Sweater": [pexels(8662610), pexels(3265546)],
+  "Cardigan": [pexels(17185456), pexels(9603630)],
+  // jackets
+  "Bomber Jacket": [unsplash("1591047139829-d91aecb6caea"), unsplash("1617114919297-3c8ddb01f599")],
+  "Denim Jacket": [unsplash("1495105787522-5334e3ffa0ef"), unsplash("1543076447-215ad9ba6923")],
+  "Windbreaker": [pexels(13085468), pexels(21820213)],
+  "Track Jacket": [pexels(37124607), pexels(37124611)],
+  "Quilted Jacket": [pexels(9604195), pexels(6334403)],
+  // coats
+  "Wool Overcoat": [unsplash("1485968579580-b6d095142e6e"), unsplash("1539533018447-63fcce2678e3")],
+  "Parka": [unsplash("1548883354-94bcfe321cbb"), pexels(20606067)],
+  "Puffer Coat": [pexels(14953624), pexels(20606067)],
+  "Trench Coat": [pexels(35332621), pexels(13973198)],
+  "Shearling Coat": [unsplash("1608063615781-e2ef8c73d114"), unsplash("1559551409-dadc959f76b8")],
+  // jeans
+  "Straight-Leg Jeans": [unsplash("1604176354204-9268737828e4"), unsplash("1565084888279-aca607ecce0c")],
+  "Slim-Fit Jeans": [unsplash("1582552938357-32b906df40cb"), unsplash("1541099649105-f69ad21f3246")],
+  "Relaxed Jeans": [unsplash("1565084888279-aca607ecce0c"), unsplash("1560243563-062bfc001d68")],
+  "Wide-Leg Jeans": [unsplash("1600717535275-0b18ede2f7fc"), unsplash("1560243563-062bfc001d68")],
+  "Skinny Jeans": [unsplash("1584370848010-d7fe6bc767ec"), unsplash("1541099649105-f69ad21f3246")],
+  // pants
+  "Cargo Pants": [pexels(11716436), pexels(19220710)],
+  "Tailored Trousers": [unsplash("1624378439575-d8705ad7ae80"), unsplash("1509631179647-0177331693ae")],
+  "Track Pants": [unsplash("1594633312681-425c7b97ccd1"), unsplash("1473966968600-fa801b869a1a")],
+  "Corduroy Pants": [pexels(7716960), pexels(32251298)],
+  "Pleated Pants": [unsplash("1509631179647-0177331693ae"), unsplash("1473966968600-fa801b869a1a")],
+  // shorts
+  "Denim Shorts": [unsplash("1591195853828-11db59a44f6b"), unsplash("1617952236317-0bd127407984")],
+  "Cargo Shorts": [pexels(34084507), pexels(33992168)],
+  "Chino Shorts": [unsplash("1617952236317-0bd127407984"), pexels(18551488)],
+  "Sweat Shorts": [pexels(9775727), pexels(8942372)],
+  "Tailored Shorts": [pexels(6988089), unsplash("1598522325074-042db73aa4e6")],
+  // dresses-skirts
+  "Wrap Dress": [unsplash("1572804013309-59a88b7e92f1"), unsplash("1478146896981-b80fe463b330")],
+  "Pleated Skirt": [unsplash("1582142306909-195724d33ffc"), unsplash("1583496661160-fb5886a0aaaa")],
+  "Slip Dress": [pexels(20364786), pexels(20364793)],
+  "Denim Skirt": [pexels(19220724), pexels(6069824)],
+  "Shirt Dress": [unsplash("1591369822096-ffd140ec948f"), unsplash("1515372039744-b8f02a3ae446")],
+  // sneakers
+  "Low-Top Sneaker": [unsplash("1603808033192-082d6919d3e1"), pexels(7193626)],
+  "Runner Sneaker": [pexels(23491456), pexels(5526492)],
+  "Retro Basketball Sneaker": [pexels(21705948), pexels(15677676)],
+  "Court Sneaker": [pexels(27204251), pexels(13536939)],
+  "Chunky Sneaker": [unsplash("1608667508764-33cf0726b13a"), unsplash("1560769629-975ec94e6a86")],
+  // canvas-shoes
+  "Canvas Low-Top": [pexels(12526086), unsplash("1525966222134-fcfa99b8ae77")],
+  "Slip-On Canvas Shoe": [pexels(15059773), pexels(20031112)],
+  "Canvas High-Top": [unsplash("1617606002806-94e279c22567"), unsplash("1494496195158-c3becb4f2475")],
+  "Espadrille Sneaker": [pexels(35702986), pexels(38570360)],
+  "Deck Shoe": [pexels(7887198), pexels(2554744)],
+  // boots
+  "Combat Boot": [unsplash("1608256246200-53e635b5b65f"), unsplash("1520639888713-7851133b1ed0")],
+  "Chelsea Boot": [pexels(38277608), unsplash("1531310197839-ccf54634509e")],
+  "Hiking Boot": [pexels(18236151), unsplash("1520639888713-7851133b1ed0")],
+  "Work Boot": [unsplash("1520639888713-7851133b1ed0"), unsplash("1608256246200-53e635b5b65f")],
+  "Winter Boot": [pexels(6609908), pexels(7087303)],
+  // dress-shoes
+  "Leather Oxford": [unsplash("1614253429340-98120bd6d753"), unsplash("1449505278894-297fdb3edbc1")],
+  "Monk Strap Shoe": [unsplash("1533867617858-e7b97e060509"), unsplash("1614252235316-8c857d38b5f4")],
+  "Penny Loafer": [pexels(25381178), pexels(11985344)],
+  "Derby Shoe": [unsplash("1614252235316-8c857d38b5f4"), unsplash("1560343090-f0409e92791a")],
+  "Chukka Boot": [pexels(15232890), pexels(9397837)],
+  // sandals
+  "Slide Sandal": [pexels(29320435), pexels(18186215)],
+  "Sport Sandal": [pexels(31129841), pexels(31129840)],
+  "Leather Sandal": [pexels(6964398), unsplash("1603487742131-4160ec999306")],
+  "Flip-Flop": [pexels(33475834), pexels(39245998)],
+  "Strap Sandal": [unsplash("1562273138-f46be4ebdf33"), unsplash("1613987876445-fcb353cd8e27")],
+  // bags
+  "Tote Bag": [pexels(30431969), pexels(17836626)],
+  "Crossbody Bag": [unsplash("1566150905458-1bf1fc113f0d"), unsplash("1590874103328-eac38a683ce7")],
+  "Shoulder Bag": [unsplash("1611923134239-b9be5816e23c"), unsplash("1559563458-527698bf5295")],
+  "Messenger Bag": [pexels(11623262), pexels(36492563)],
+  "Clutch Bag": [pexels(28028348), pexels(1358840)],
+  // backpacks
+  "Daypack Backpack": [unsplash("1581605405669-fcdf81165afa"), unsplash("1553062407-98eeb64c6a62")],
+  "Laptop Backpack": [unsplash("1546938576-6e6a64f317cc"), unsplash("1611010344444-5f9e4d86a6e1")],
+  "Drawstring Backpack": [pexels(19488911), pexels(3850586)],
+  "Hiking Backpack": [unsplash("1575844264771-892081089af5"), unsplash("1491637639811-60e2756cc1c7")],
+  "Mini Backpack": [unsplash("1622560480605-d83c853bc5c3"), unsplash("1577733966973-d680bffd2e80")],
+  // belts
+  "Leather Belt": [unsplash("1664286074176-5206ee5dc878"), pexels(31367058)],
+  "Canvas Web Belt": [pexels(392058), pexels(31959216)],
+  "Reversible Belt": [pexels(31959214), unsplash("1624222247344-550fb60583dc")],
+  "Braided Belt": [pexels(20777832), unsplash("1664286074176-5206ee5dc878")],
+  "Logo Buckle Belt": [pexels(35336348), pexels(31367058)],
+  // wallets
+  "Bi-Fold Wallet": [unsplash("1627123424574-724758594e93"), unsplash("1517254797898-04edd251bfb3")],
+  "Card Holder": [pexels(27467355), pexels(37326710)],
+  "Zip Wallet": [pexels(22434780), pexels(21837407)],
+  "Money Clip Wallet": [pexels(14401965), pexels(14402034)],
+  "Trifold Wallet": [unsplash("1517254797898-04edd251bfb3"), unsplash("1606503825008-909a67e63c3d")],
+  // sunglasses
+  "Square Sunglasses": [unsplash("1572635196237-14b3f281503f"), unsplash("1556306535-38febf6782e7")],
+  "Round Sunglasses": [unsplash("1511499767150-a48a237f0083"), unsplash("1572635196237-14b3f281503f")],
+  "Wrap Sunglasses": [pexels(8386429), pexels(7666401)],
+  "Oversized Sunglasses": [unsplash("1577803645773-f96470509666"), unsplash("1473496169904-658ba7c44d8a")],
+  "Sport Sunglasses": [pexels(7666401), unsplash("1556306535-38febf6782e7")],
+  // headwear
+  "Beanie": [unsplash("1576871337632-b9aef4c17ab9"), unsplash("1521369909029-2afed882baee")],
+  "Bucket Hat": [pexels(7956539), unsplash("1578681994506-b8f463449011")],
+  "Snapback Cap": [unsplash("1556306535-0f09a537f0a3"), unsplash("1588850561407-ed78c282e89b")],
+  "Wool Cap": [pexels(31530119), pexels(10312205)],
+  "Trucker Cap": [unsplash("1588850561407-ed78c282e89b"), unsplash("1534215754734-18e55d13e346")],
+  // watches
+  "Chronograph Watch": [unsplash("1522312346375-d1a52e2b99b3"), unsplash("1542496658-e33a6d0d50f6")],
+  "Digital Sport Watch": [pexels(32452826), pexels(18150100)],
+  "Minimalist Watch": [unsplash("1434056886845-dac89ffe9b56"), unsplash("1542496658-e33a6d0d50f6")],
+  "Dive Watch": [pexels(36426756), pexels(33303776)],
+  "Smart Watch": [unsplash("1523275335684-37898b6baf30"), pexels(4070966)],
+  // jewelry
+  "Chain Necklace": [unsplash("1590548784585-643d2b9f2925"), unsplash("1602173574767-37ac01994b2a")],
+  "Signet Ring": [pexels(6012226), pexels(13035519)],
+  "Stud Earrings": [pexels(28389455), pexels(5370643)],
+  "Charm Bracelet": [unsplash("1611591437281-460bfbe1220a"), unsplash("1602173574767-37ac01994b2a")],
+  "Pendant Necklace": [pexels(33452872), pexels(29736434)],
 };
 
-function imagesFor(product: { slug: string; categorySlug: string }, n: number): string[] {
-  const curatedIds = CURATED_IMG_IDS[product.slug];
-  if (curatedIds) return curatedIds.map(img);
-  const pool = IMG_IDS_BY_CATEGORY[product.categorySlug];
-  return [img(pool[n % pool.length]), img(pool[(n + 1) % pool.length])];
+function imagesFor(product: SeedProduct): [string, string] {
+  const photos = CURATED_PHOTOS[product.slug] ?? FILLER_PHOTOS[product.photoKey ?? ""];
+  if (!photos) throw new Error(`No photos for "${product.slug}"`);
+  return photos;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -383,6 +429,7 @@ type SeedProduct = {
   sizes: string[];
   skuPrefix: string;
   isFeatured?: boolean;
+  photoKey?: string; // filler products only: their FILLER_PHOTOS entry
 };
 
 const curatedProducts: SeedProduct[] = [
@@ -1081,6 +1128,7 @@ function buildFillerProducts(): SeedProduct[] {
         color,
         sizes: sizesForFiller(categorySlug),
         skuPrefix: slugify(`${brand.slug}-${categorySlug}-${gender}-${i}`).toUpperCase(),
+        photoKey: nameTemplate,
       });
       cursor++;
     });
@@ -1143,10 +1191,7 @@ async function main() {
 
   // --- Products + variants + images ---------------------------------------
   let variantCount = 0;
-  const countInCategory = new Map<string, number>();
   for (const product of products) {
-    const n = countInCategory.get(product.categorySlug) ?? 0;
-    countInCategory.set(product.categorySlug, n + 1);
     const brandId = brandIdBySlug.get(product.brandSlug);
     const categoryId = categoryIdBySlug.get(product.categorySlug);
     if (!brandId || !categoryId) {
@@ -1167,7 +1212,7 @@ async function main() {
         brandId,
         categoryId,
         images: {
-          create: imagesFor(product, n).map((url, position) => ({
+          create: imagesFor(product).map((url, position) => ({
             url,
             alt: `${product.name} — view ${position + 1}`,
             position,

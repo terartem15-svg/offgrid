@@ -321,9 +321,9 @@ The app is built for [Vercel](https://vercel.com/):
 
 ## Notes
 
-- Product photos are hot-linked from [Unsplash](https://unsplash.com/) and the copy is placeholder text. Each
-  category has its own pool of photos, so a product shows the right kind of item, but not always the exact
-  model in its name.
+- Product photos are hot-linked from [Unsplash](https://unsplash.com/) and [Pexels](https://www.pexels.com/),
+  and the copy is placeholder text. Every product has its own pair of photos, picked by eye to show that kind of
+  item (a penny loafer for a penny loafer), but not always the exact model or brand in its name.
 - The region switcher changes the **language** only; prices are always shown and charged in EUR.
 - This is a portfolio project, not a production store.
 
