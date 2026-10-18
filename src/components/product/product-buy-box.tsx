@@ -74,6 +74,7 @@ export function ProductBuyBox({ product, color, onColorChange }: ProductBuyBoxPr
   );
   const outOfStock = Boolean(size) && (!selectedVariant || selectedVariant.stock <= 0);
   const price = selectedVariant?.price ?? product.price;
+  const onSale = product.compareAtPrice != null && product.compareAtPrice > price;
 
   // Before a size is picked there's no exact variant yet — show the first
   // variant for the current color so a SKU is always visible to copy.
@@ -151,10 +152,14 @@ export function ProductBuyBox({ product, color, onColorChange }: ProductBuyBoxPr
         {skuCopied && <span className="text-emerald-600">{t.skuCopied}</span>}
       </div>
 
+      {/* Same sale styling as the catalog card, so the old price doesn't vanish on the product page. */}
       <div className="mt-5 flex items-center gap-3">
-        <span className="text-2xl font-semibold text-ink">
+        <span className={cn("text-2xl font-semibold", onSale ? "text-red-600" : "text-ink")}>
           {formatPrice(price)}
         </span>
+        {onSale && (
+          <span className="text-lg text-ink/40 line-through">{formatPrice(product.compareAtPrice!)}</span>
+        )}
       </div>
 
       <p className="mt-4 text-sm leading-relaxed text-ink/60">
@@ -272,6 +277,7 @@ export function ProductBuyBox({ product, color, onColorChange }: ProductBuyBoxPr
         onClose={() => setOpenInfo(null)}
         title={shownInfo?.label ?? ""}
         sections={shownInfo?.sections ?? []}
+        closeLabel={quickBuyText.close}
       />
 
       <QuickBuyModal

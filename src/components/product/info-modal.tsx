@@ -12,6 +12,8 @@ type InfoModalProps = {
   onClose: () => void;
   title: string;
   sections: InfoSection[];
+  /** Accessible name of the close button, in the page's language. */
+  closeLabel: string;
 };
 
 /** How long the slide/fade transition takes — kept unmounted after this so it never blocks input. */
@@ -23,7 +25,7 @@ const TRANSITION_MS = 300;
  * the gallery or the rest of the page. Slides up and fades in/out rather
  * than snapping open, and stays mounted for the closing animation.
  */
-export function InfoModal({ open, onClose, title, sections }: InfoModalProps) {
+export function InfoModal({ open, onClose, title, sections, closeLabel }: InfoModalProps) {
   const [rendered, setRendered] = useState(open);
   const [visible, setVisible] = useState(false);
 
@@ -83,7 +85,7 @@ export function InfoModal({ open, onClose, title, sections }: InfoModalProps) {
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={closeLabel}
             className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink/50 hover:bg-ink/5 hover:text-ink"
           >
             <X className="h-5 w-5" />

@@ -12,6 +12,8 @@ type ProductGalleryProps = {
 
 export function ProductGallery({ images, name }: ProductGalleryProps) {
   const [active, setActive] = useState(0);
+  // Clamped in case the list shrinks under a kept selection.
+  const activeImage = images[Math.min(active, images.length - 1)];
 
   return (
     <div className="flex gap-4">
@@ -21,7 +23,8 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
             key={src}
             type="button"
             onClick={() => setActive(i)}
-            aria-label={`View image ${i + 1}`}
+            aria-label={`${name} — ${i + 1}`}
+            aria-pressed={i === active}
             className={cn(
               "relative h-20 w-16 overflow-hidden rounded-md border bg-paper transition",
               i === active ? "border-ink" : "border-transparent hover:border-ink/30",
@@ -39,14 +42,16 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
       </div>
 
       <div className="relative aspect-[3/4] flex-1 overflow-hidden rounded-lg bg-paper">
-        <Image
-          src={images[active]}
-          alt={name}
-          fill
-          priority
-          sizes="(min-width: 1024px) 44vw, 100vw"
-          className="object-cover"
-        />
+        {activeImage && (
+          <Image
+            src={activeImage}
+            alt={name}
+            fill
+            priority
+            sizes="(min-width: 1024px) 44vw, 100vw"
+            className="object-cover"
+          />
+        )}
       </div>
     </div>
   );

@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ChevronRight } from "lucide-react";
 
-import { HomeBreadcrumbLink } from "@/components/product/home-breadcrumb-link";
+import { CategoryBreadcrumbLink, HomeBreadcrumbLink } from "@/components/product/home-breadcrumb-link";
 import { ProductTabs } from "@/components/product/product-tabs";
 import { ProductView } from "@/components/product/product-view";
 import {
@@ -16,6 +15,10 @@ import { getProductBySlug, getProductSlugs } from "@/lib/products";
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
 };
+
+// Pre-rendered per slug, but stock changes with every order (and orders don't revalidate the
+// page), so refresh it at most a minute after a sale instead of keeping build-time stock forever.
+export const revalidate = 60;
 
 export async function generateStaticParams() {
   try {
@@ -53,12 +56,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <nav className="flex items-center gap-1 text-xs text-ink/50">
           <HomeBreadcrumbLink />
           <ChevronRight className="h-3.5 w-3.5" />
-          <Link
-            href={`/catalog?category=${product.categorySlug}`}
-            className="capitalize hover:text-ink"
-          >
-            {product.categorySlug.replace("-", " ")}
-          </Link>
+          <CategoryBreadcrumbLink slug={product.categorySlug} />
           <ChevronRight className="h-3.5 w-3.5" />
           <span className="text-ink">{product.name}</span>
         </nav>
