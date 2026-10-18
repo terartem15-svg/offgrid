@@ -29,10 +29,14 @@ function LoginForm() {
       email,
       password,
       redirect: false,
-    });
+    }).catch(() => null);
 
     setLoading(false);
-    if (result?.error) {
+    if (!result) {
+      setError(t.errorGeneric);
+      return;
+    }
+    if (result.error) {
       // `code` is set by the server when the sign-in was blocked by the attempt limit.
       setError(result.code === "too_many_attempts" ? t.tooManyAttempts : t.invalidCredentials);
       return;

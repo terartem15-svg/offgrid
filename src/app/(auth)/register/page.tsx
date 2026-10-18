@@ -24,23 +24,38 @@ export default function RegisterPage() {
     setError(null);
     setLoading(true);
 
-    const res = await fetch("/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => null);
-      setError(data?.error ?? "Не удалось создать аккаунт");
+    let res: Response;
+    try {
+      res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+    } catch {
+      setError(t.errorGeneric);
       setLoading(false);
       return;
     }
 
-    const result = await signIn("credentials", { email, password, redirect: false });
+    if (!res.ok) {
+      // The API answers in English; show the visitor's language instead.
+      setError(
+        res.status === 409
+          ? t.errorEmailTaken
+          : res.status === 429
+            ? t.errorTooMany
+            : res.status === 400
+              ? t.errorInvalid
+              : t.errorGeneric,
+      );
+      setLoading(false);
+      return;
+    }
+
+    const result = await signIn("credentials", { email, password, redirect: false }).catch(() => null);
     setLoading(false);
 
-    if (result?.error) {
+    if (!result || result.error) {
       router.push("/login");
       return;
     }

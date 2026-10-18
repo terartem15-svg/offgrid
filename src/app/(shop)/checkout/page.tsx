@@ -74,28 +74,39 @@ export default function CheckoutPage() {
     setSubmitting(true);
     setError(null);
 
-    const res = await fetch("/api/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        items: items.map((line) => ({
-          slug: line.slug,
-          size: line.size,
-          color: line.color,
-          quantity: line.quantity,
-        })),
-        shippingAddress: {
-          ...address,
-          line2: address.line2 || undefined,
-          phone: address.phone || undefined,
-        },
-      }),
-    });
+    let res: Response;
+    try {
+      res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((line) => ({
+            slug: line.slug,
+            size: line.size,
+            color: line.color,
+            quantity: line.quantity,
+          })),
+          shippingAddress: {
+            ...address,
+            line2: address.line2 || undefined,
+            phone: address.phone || undefined,
+          },
+        }),
+      });
+    } catch {
+      // Offline or the request never got an answer — let the customer retry.
+      setError(t.errorGeneric);
+      setSubmitting(false);
+      return;
+    }
 
     const data = await res.json().catch(() => null);
 
-    if (!res.ok) {
-      setError(data?.error ?? "Не удалось оформить заказ");
+    if (!res.ok || !data?.url) {
+      // The API answers in English; show the shopper's language instead.
+      setError(
+        res.status === 409 ? t.errorUnavailable : res.status === 502 ? t.errorPayment : t.errorGeneric,
+      );
       setSubmitting(false);
       return;
     }

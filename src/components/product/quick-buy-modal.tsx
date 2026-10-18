@@ -72,8 +72,11 @@ export function QuickBuyModal({ open, onClose, slug, size, color }: QuickBuyModa
         }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        setError(data?.error ?? t.errorGeneric);
+      if (!res.ok || !data?.orderNumber) {
+        // The API answers in English; show the customer's language instead.
+        setError(
+          res.status === 409 ? t.errorUnavailable : res.status === 429 ? t.errorTooMany : t.errorGeneric,
+        );
         return;
       }
       setOrderNumber(data.orderNumber);
