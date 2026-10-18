@@ -19,10 +19,16 @@ export const REGIONS: Region[] = [
   { code: "INT", country: "International", language: "English", lang: "en" },
 ];
 
-export const DEFAULT_REGION_CODE: Region["code"] = "MD";
+// English for a first visit: the catalog data (names, descriptions) is English anyway, and
+// Romanian and Russian stay one click away in the switcher.
+export const DEFAULT_REGION_CODE: Region["code"] = "INT";
 
 export function regionByCode(code: Region["code"]): Region {
-  return REGIONS.find((r) => r.code === code) ?? REGIONS[0];
+  return (
+    REGIONS.find((r) => r.code === code) ??
+    REGIONS.find((r) => r.code === DEFAULT_REGION_CODE) ??
+    REGIONS[0]
+  );
 }
 
 type RegionState = {
@@ -31,11 +37,10 @@ type RegionState = {
 };
 
 /**
- * Region + language is a display-only preference here: OFFGRID has no
- * localized copy and Stripe checkout is hardcoded to EUR (see
- * src/app/api/checkout/route.ts), so switching region does NOT convert
- * prices — it only changes the flag/label shown in the header, to avoid
- * showing a currency that would silently disagree with what Stripe charges.
+ * Region only picks the storefront language (see `@/lib/i18n`). Stripe
+ * checkout is hardcoded to EUR (see src/app/api/checkout/route.ts), so
+ * switching region does NOT convert prices, to avoid showing a currency
+ * that would silently disagree with what Stripe charges.
  */
 export const useRegionStore = create<RegionState>()(
   persist(

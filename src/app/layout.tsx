@@ -28,9 +28,9 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    // The server renders the default region's language (Romanian); RegionSwitcher keeps
+    // The server renders the default region's language (English); RegionSwitcher keeps
     // `lang` in step once the visitor's saved choice is known.
-    <html lang="ro" className={inter.variable}>
+    <html lang="en" className={inter.variable}>
       <body className="flex min-h-screen flex-col bg-white font-sans text-ink">
         <SessionProvider>
           <NotificationBar />

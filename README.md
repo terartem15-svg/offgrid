@@ -78,7 +78,7 @@ charged.
 - **Wishlist drawer.** Cart and wishlist are persisted in the browser (Zustand) and are kept **separately per
   signed-in user**, so switching accounts never leaks one person's items into another's. What a guest collected
   is carried into the account on sign-in, so checkout's "sign in first" step doesn't empty the cart.
-- **Three languages** — English, Romanian and Russian — with a region / language switcher.
+- **Three languages** — English (the default), Romanian and Russian — with a region / language switcher.
 - **About** and **Contact** pages.
 
 ### Accounts
