@@ -13,7 +13,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 ![Stripe](https://img.shields.io/badge/Stripe-Checkout-635BFF?logo=stripe&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss&logoColor=white)
-[![CI](https://github.com/terartem15-svg/offgrid12/actions/workflows/ci.yml/badge.svg)](https://github.com/terartem15-svg/offgrid12/actions/workflows/ci.yml)
+[![CI](https://github.com/terartem15-svg/offgrid/actions/workflows/ci.yml/badge.svg)](https://github.com/terartem15-svg/offgrid/actions/workflows/ci.yml)
 
 </div>
 
@@ -163,8 +163,8 @@ charged.
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/terartem15-svg/offgrid12.git
-cd offgrid12
+git clone https://github.com/terartem15-svg/offgrid.git
+cd offgrid
 npm install          # also runs `prisma generate`
 ```
 
