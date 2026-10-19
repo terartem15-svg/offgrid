@@ -2,6 +2,7 @@ import { Gender } from "@prisma/client";
 import type { Metadata } from "next";
 
 import { CatalogEmptyState, CatalogHeading } from "@/components/catalog/catalog-heading";
+import { CatalogResults, CatalogTransitionProvider } from "@/components/catalog/catalog-transition";
 import { FilterSidebar } from "@/components/catalog/filter-sidebar";
 import { Pagination } from "@/components/catalog/pagination";
 import { ProductCard } from "@/components/shared/product-card";
@@ -83,28 +84,30 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
         itemCount={total}
       />
 
-      <div className="mt-10 flex flex-col gap-10 lg:flex-row">
-        <FilterSidebar options={options} />
+      <CatalogTransitionProvider>
+        <div className="mt-10 flex flex-col gap-10 lg:flex-row">
+          <FilterSidebar options={options} />
 
-        <div className="flex-1">
-          {items.length === 0 ? (
-            <CatalogEmptyState />
-          ) : (
-            <>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
-                {items.map((product) => (
-                  <ProductCard key={product.slug} product={product} />
-                ))}
-              </div>
-              <Pagination
-                currentPage={currentPage}
-                pageCount={pageCount}
-                buildHref={(page) => buildPageHref(params, page)}
-              />
-            </>
-          )}
+          <CatalogResults>
+            {items.length === 0 ? (
+              <CatalogEmptyState />
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
+                  {items.map((product) => (
+                    <ProductCard key={product.slug} product={product} />
+                  ))}
+                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  pageCount={pageCount}
+                  buildHref={(page) => buildPageHref(params, page)}
+                />
+              </>
+            )}
+          </CatalogResults>
         </div>
-      </div>
+      </CatalogTransitionProvider>
     </div>
   );
 }

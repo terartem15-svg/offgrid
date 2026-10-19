@@ -1,9 +1,10 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useOptimistic, useState } from "react";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 
+import { useCatalogTransition } from "@/components/catalog/catalog-transition";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
 import { categoryLabel, useTranslations } from "@/lib/i18n";
@@ -85,12 +86,20 @@ export function FilterSidebar({ options }: FilterSidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { startTransition } = useCatalogTransition();
 
-  const activeGenders = searchParams.getAll("gender").map((g) => g.toLowerCase());
-  const activeCategories = searchParams.getAll("category");
-  const activeBrands = searchParams.getAll("brand");
-  const activeSizes = searchParams.getAll("size");
-  const activeColors = searchParams.getAll("color");
+  // The URL only changes once the server has rendered the new results, so the
+  // controls read an optimistic copy of the query instead: a click shows up at
+  // once, and a second click before the first one lands builds on the first
+  // instead of on the stale URL (which used to drop the earlier choice).
+  const [query, setOptimisticQuery] = useOptimistic(searchParams.toString());
+  const params = new URLSearchParams(query);
+
+  const activeGenders = params.getAll("gender").map((g) => g.toLowerCase());
+  const activeCategories = params.getAll("category");
+  const activeBrands = params.getAll("brand");
+  const activeSizes = params.getAll("size");
+  const activeColors = params.getAll("color");
   const urlPriceMin = searchParams.get("priceMin") ?? "";
   const urlPriceMax = searchParams.get("priceMax") ?? "";
   const [priceMin, setPriceMin] = useState(urlPriceMin);
@@ -103,11 +112,17 @@ export function FilterSidebar({ options }: FilterSidebarProps) {
     setPriceMax(urlPriceMax);
   }, [urlPriceMin, urlPriceMax]);
 
+  const navigate = (nextQuery: string) =>
+    startTransition(() => {
+      setOptimisticQuery(nextQuery);
+      router.push(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    });
+
   const pushParams = (mutate: (params: URLSearchParams) => void) => {
-    const params = new URLSearchParams(searchParams.toString());
-    mutate(params);
-    params.delete("page");
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    const next = new URLSearchParams(query);
+    mutate(next);
+    next.delete("page");
+    navigate(next.toString());
   };
 
   const toggleGender = (value: string) =>
@@ -160,7 +175,7 @@ export function FilterSidebar({ options }: FilterSidebarProps) {
   const clearAll = () => {
     setPriceMin("");
     setPriceMax("");
-    router.push(pathname, { scroll: false });
+    navigate("");
   };
 
   return (
