@@ -33,7 +33,7 @@ export function ProductBuyBox({ product, color, onColorChange }: ProductBuyBoxPr
   const isWishlisted = useWishlistStore((s) => s.items.some((i) => i.slug === product.slug));
   const toggleWishlist = useWishlistStore((s) => s.toggleItem);
 
-  const [size, setSize] = useState<string | null>(null);
+  const [pickedSize, setSize] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [skuCopied, setSkuCopied] = useState(false);
@@ -58,6 +58,13 @@ export function ProductBuyBox({ product, color, onColorChange }: ProductBuyBoxPr
     }
     return map;
   }, [product.variants, color]);
+
+  // A product that comes in one size for this color (bags, belts, "One Size"
+  // accessories) leaves nothing to choose, so that size counts as picked and
+  // "Add to Cart" works straight away. A size the shopper picks still wins.
+  const onlySize =
+    sizesForColor.length === 1 && (stockBySize[sizesForColor[0]] ?? 0) > 0 ? sizesForColor[0] : null;
+  const size = pickedSize ?? onlySize;
 
   const outOfStockColors = useMemo(() => {
     const totals = new Map<string, number>();
