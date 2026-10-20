@@ -26,7 +26,10 @@ export function Hero() {
         // on wide screens (top) and on narrow ones (right of center).
         className="object-cover object-[72%_top]"
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-ink/80 via-ink/30 to-transparent" />
+      {/* Below 840px (560px x 3:2) the photo is fitted by height, so the headline
+          runs across the shirt, whose white buttons read as stray dots next to the
+          letters: shade from below the face down instead. */}
+      <div className="absolute inset-0 bg-gradient-to-r from-ink/80 via-ink/30 to-transparent max-[840px]:bg-gradient-to-b max-[840px]:from-transparent max-[840px]:from-20% max-[840px]:via-ink/70 max-[840px]:via-30% max-[840px]:to-ink/80" />
 
       <div className="relative mx-auto flex min-h-[560px] max-w-7xl flex-col justify-center px-4 py-20">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
